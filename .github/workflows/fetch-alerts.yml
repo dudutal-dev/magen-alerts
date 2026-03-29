@@ -40,8 +40,6 @@ jobs:
             "https://www.oref.org.il/WarningMessages/alert/History/AlertsHistory.json" 2>/dev/null)
           if echo "$RESP" | python3 -c "import sys,json; data=json.load(sys.stdin); assert isinstance(data,list)" 2>/dev/null; then
             echo "$RESP" > history.json
-          else
-            echo "History fetch failed, keeping existing file"
           fi
 
       - name: Add timestamp

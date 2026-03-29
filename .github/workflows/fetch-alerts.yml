@@ -16,23 +16,33 @@ jobs:
 
       - name: Fetch active alerts
         run: |
-          curl -s \
+          RESP=$(curl -s \
             -H "Referer: https://www.oref.org.il/" \
             -H "X-Requested-With: XMLHttpRequest" \
-            -H "Accept: application/json" \
+            -H "User-Agent: Mozilla/5.0" \
+            -H "Accept: application/json, text/plain, */*" \
             --max-time 10 \
-            "https://www.oref.org.il/WarningMessages/alert/alerts.json" \
-            -o alerts.json || echo "{}" > alerts.json
+            "https://www.oref.org.il/WarningMessages/alert/alerts.json" 2>/dev/null)
+          if echo "$RESP" | python3 -c "import sys,json; json.load(sys.stdin)" 2>/dev/null; then
+            echo "$RESP" > alerts.json
+          else
+            echo "{}" > alerts.json
+          fi
 
       - name: Fetch history
         run: |
-          curl -s \
+          RESP=$(curl -s \
             -H "Referer: https://www.oref.org.il/" \
             -H "X-Requested-With: XMLHttpRequest" \
-            -H "Accept: application/json" \
-            --max-time 10 \
-            "https://www.oref.org.il/WarningMessages/alert/History/AlertsHistory.json" \
-            -o history.json || echo "[]" > history.json
+            -H "User-Agent: Mozilla/5.0" \
+            -H "Accept: application/json, text/plain, */*" \
+            --max-time 15 \
+            "https://www.oref.org.il/WarningMessages/alert/History/AlertsHistory.json" 2>/dev/null)
+          if echo "$RESP" | python3 -c "import sys,json; data=json.load(sys.stdin); assert isinstance(data,list)" 2>/dev/null; then
+            echo "$RESP" > history.json
+          else
+            echo "History fetch failed, keeping existing file"
+          fi
 
       - name: Add timestamp
         run: |
@@ -43,5 +53,5 @@ jobs:
           git config user.name  "github-actions[bot]"
           git config user.email "github-actions[bot]@users.noreply.github.com"
           git add alerts.json history.json meta.json
-          git diff --staged --quiet || git commit -m "update alerts $(date -u +%H:%M:%S)"
+          git diff --staged --quiet || git commit -m "alerts $(date -u +%H:%M:%S)"
           git push

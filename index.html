@@ -7,6 +7,9 @@
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
 <meta name="apple-mobile-web-app-title" content="מגן">
+<link rel="apple-touch-icon" href="icon.svg">
+<link rel="icon" type="image/svg+xml" href="icon.svg">
+<link rel="manifest" href="manifest.json">
 <title>מגן — פיקוד העורף</title>
 <link href="https://fonts.googleapis.com/css2?family=Rajdhani:wght@600;700&family=Heebo:wght@400;500;700&family=Share+Tech+Mono&display=swap" rel="stylesheet">
 <style>
@@ -945,7 +948,7 @@ function doPush(title,body){
 function getKey(){try{return localStorage.getItem('mg_k')||'';}catch(e){return '';}}
 function aiInp(){document.getElementById('ai-st').textContent='';}
 function saveKey(){
-  const inp=document.getElementById('api-inp');
+  const inp=document.getElementById('ai-inp');
   const v=(inp.value||'').trim();
   if(!v||v.includes('•')){
     document.getElementById('ai-st').textContent='❌ מפתח לא תקין';
@@ -953,14 +956,14 @@ function saveKey(){
   }
   localStorage.setItem('mg_k',v);
   inp.value=v.slice(0,18)+'•'.repeat(14);
-  document.getElementById('ai-st').textContent='✅ נשמר';
+  document.getElementById('ai-st').textContent='✅ נשמר בהצלחה';
   document.getElementById('ai-st').style.color='var(--live)';
   document.getElementById('ai-btn').disabled=false;
 }
 function initAi(){
   const k=getKey();
   if(k){
-    document.getElementById('api-inp').value=k.slice(0,18)+'•'.repeat(14);
+    document.getElementById('ai-inp').value=k.slice(0,18)+'•'.repeat(14);
     document.getElementById('ai-st').textContent='✅ מפתח שמור';
     document.getElementById('ai-st').style.color='var(--live)';
     document.getElementById('ai-btn').disabled=false;

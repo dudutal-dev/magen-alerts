@@ -8,2218 +8,1056 @@
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
 <meta name="apple-mobile-web-app-title" content="מגן">
 <title>מגן — פיקוד העורף</title>
-<link rel="preconnect" href="https://fonts.googleapis.com">
-<link href="https://fonts.googleapis.com/css2?family=Rajdhani:wght@400;500;600;700&family=Heebo:wght@300;400;500;700;900&family=Share+Tech+Mono&display=swap" rel="stylesheet">
-
+<link href="https://fonts.googleapis.com/css2?family=Rajdhani:wght@600;700&family=Heebo:wght@400;500;700&family=Share+Tech+Mono&display=swap" rel="stylesheet">
 <style>
-/* ═══════════════════════════════════════════
-   DESIGN TOKENS
-═══════════════════════════════════════════ */
 :root {
-  --void:      #030608;
-  --deep:      #060b10;
-  --surface:   #0a1018;
-  --panel:     #0d1520;
-  --border:    rgba(255,255,255,.07);
-  --border-hi: rgba(255,255,255,.13);
-
-  --live:   #00e5a0;
-  --cyan:   #00c8ff;
-  --red:    #ff1a3a;
-  --amber:  #ff9500;
-  --dim:    rgba(0,229,160,.12);
-
-  --text:   #e8f0f8;
-  --text2:  rgba(232,240,248,.6);
-  --text3:  rgba(232,240,248,.35);
-
-  --raj: 'Rajdhani', sans-serif;
-  --heb: 'Heebo', sans-serif;
-  --mono: 'Share Tech Mono', monospace;
-
-  --r: 16px;
-  --r-lg: 24px;
-  --safe-top: env(safe-area-inset-top, 0px);
-  --safe-bot: env(safe-area-inset-bottom, 0px);
-}
-
-/* ═══════════════════════════════════════════
-   RESET + BASE
-═══════════════════════════════════════════ */
-*,*::before,*::after { box-sizing:border-box; margin:0; padding:0; }
-html { height:100%; overflow:hidden; }
-body {
-  font-family: var(--heb);
-  background: var(--void);
-  color: var(--text);
-  height: 100%;
-  overflow: hidden;
-  -webkit-font-smoothing: antialiased;
-  user-select: none;
-  -webkit-tap-highlight-color: transparent;
-}
-
-/* ═══════════════════════════════════════════
-   LAYOUT SHELL
-═══════════════════════════════════════════ */
-#app {
-  display: grid;
-  grid-template-rows: auto 1fr auto;
-  height: 100vh;
-  height: 100dvh;
-  padding-top: var(--safe-top);
-  padding-bottom: var(--safe-bot);
-  position: relative;
-  overflow: hidden;
-}
-
-/* ═══════════════════════════════════════════
-   BACKGROUND — topology grid
-═══════════════════════════════════════════ */
-#bg-canvas {
-  position: fixed;
-  inset: 0;
-  z-index: 0;
-  pointer-events: none;
-  opacity: .4;
-}
-
-/* ═══════════════════════════════════════════
-   TOP BAR
-═══════════════════════════════════════════ */
-#topbar {
-  position: relative;
-  z-index: 10;
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  padding: 12px 20px 10px;
-  border-bottom: 1px solid var(--border);
-  background: linear-gradient(180deg, rgba(3,6,8,.95) 0%, rgba(3,6,8,.6) 100%);
-  backdrop-filter: blur(20px);
-}
-#logo {
-  display: flex;
-  align-items: center;
-  gap: 10px;
-}
-#logo-icon {
-  width: 34px; height: 34px;
-  background: linear-gradient(135deg, #ff1a3a 0%, #c00020 100%);
-  border-radius: 10px;
-  display: flex; align-items: center; justify-content: center;
-  font-size: 18px;
-  box-shadow: 0 0 18px rgba(255,26,58,.35);
-  flex-shrink: 0;
-}
-#logo-text {
-  font-family: var(--raj);
-  font-size: 22px;
-  font-weight: 700;
-  letter-spacing: 2px;
-  color: var(--text);
-}
-#logo-sub {
-  font-size: 10px;
-  font-weight: 400;
-  color: var(--text3);
-  letter-spacing: 1px;
-}
-#status-pill {
-  display: flex;
-  align-items: center;
-  gap: 7px;
-  background: var(--panel);
-  border: 1px solid var(--border);
-  border-radius: 20px;
-  padding: 6px 12px 6px 10px;
-  font-family: var(--mono);
-  font-size: 11px;
-  color: var(--text2);
-  transition: all .3s;
-}
-#status-pill.live { border-color: rgba(0,229,160,.3); }
-#status-pill.alert { border-color: rgba(255,26,58,.4); background: rgba(255,26,58,.08); }
-.sdot {
-  width: 7px; height: 7px;
-  border-radius: 50%;
-  background: var(--text3);
-  transition: background .3s;
-  flex-shrink: 0;
-}
-.sdot.live { background: var(--live); box-shadow: 0 0 8px var(--live); animation: blink 2s infinite; }
-.sdot.alert { background: var(--red); box-shadow: 0 0 8px var(--red); animation: blink .5s infinite; }
-.sdot.wait { background: var(--amber); animation: blink 1s infinite; }
-
-@keyframes blink { 0%,100%{opacity:1} 50%{opacity:.3} }
-
-/* ═══════════════════════════════════════════
-   MAIN CONTENT AREA
-═══════════════════════════════════════════ */
-#main {
-  position: relative;
-  z-index: 5;
-  overflow: hidden;
-}
-.page {
-  position: absolute;
-  inset: 0;
-  overflow-y: auto;
-  -webkit-overflow-scrolling: touch;
-  opacity: 0;
-  pointer-events: none;
-  transition: opacity .25s;
-}
-.page.active { opacity: 1; pointer-events: all; }
-
-/* ═══════════════════════════════════════════
-   PAGE: RADAR (home)
-═══════════════════════════════════════════ */
-#page-radar {
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  padding: 24px 20px 20px;
-  gap: 20px;
-}
-
-/* Threat Level Orb */
-#orb-wrap {
-  position: relative;
-  width: 220px; height: 220px;
-  flex-shrink: 0;
-}
-.ring {
-  position: absolute;
-  border-radius: 50%;
-  border: 1px solid var(--live);
-  opacity: 0;
-  animation: ring-out 3s cubic-bezier(.2,.8,.2,1) infinite;
-}
-.ring:nth-child(1) { inset: 0; animation-delay: 0s; }
-.ring:nth-child(2) { inset: -20px; animation-delay: 1s; }
-.ring:nth-child(3) { inset: -40px; animation-delay: 2s; }
-@keyframes ring-out {
-  0%  { opacity: .5; transform: scale(.85); }
-  100%{ opacity: 0;  transform: scale(1.15); }
-}
-.ring.alert { border-color: var(--red); animation-duration: 1s; }
-.ring.alert:nth-child(1) { animation-delay: 0s; }
-.ring.alert:nth-child(2) { animation-delay: .33s; }
-.ring.alert:nth-child(3) { animation-delay: .66s; }
-
-#orb {
-  position: absolute;
-  inset: 20px;
-  border-radius: 50%;
-  background: radial-gradient(circle at 40% 35%, rgba(0,229,160,.15) 0%, rgba(0,229,160,.04) 60%, transparent 100%),
-              var(--panel);
-  border: 1.5px solid rgba(0,229,160,.25);
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  justify-content: center;
-  gap: 4px;
-  transition: all .5s cubic-bezier(.2,.8,.2,1);
-  box-shadow: 0 0 40px rgba(0,229,160,.08), inset 0 1px 0 rgba(255,255,255,.06);
-}
-#orb.alert {
-  background: radial-gradient(circle at 40% 35%, rgba(255,26,58,.2) 0%, rgba(255,26,58,.05) 60%, transparent 100%), var(--panel);
-  border-color: rgba(255,26,58,.4);
-  box-shadow: 0 0 60px rgba(255,26,58,.18), inset 0 1px 0 rgba(255,255,255,.04);
-  animation: orb-shake .08s infinite;
-}
-@keyframes orb-shake { 0%,100%{transform:translate(0,0)} 25%{transform:translate(-1px,1px)} 75%{transform:translate(1px,-1px)} }
-
-#orb-icon { font-size: 38px; transition: all .3s; }
-#orb-label {
-  font-family: var(--raj);
-  font-size: 13px;
-  font-weight: 600;
-  letter-spacing: 3px;
-  color: var(--live);
-  transition: color .3s;
-}
-#orb-label.alert { color: var(--red); }
-#orb-count {
-  font-family: var(--mono);
-  font-size: 11px;
-  color: var(--text3);
-}
-
-/* Ticker */
-#ticker {
-  font-family: var(--mono);
-  font-size: 11px;
-  color: var(--text3);
-  text-align: center;
-  letter-spacing: .5px;
-}
-
-/* Alert Banner */
-#alert-banner {
-  width: 100%;
-  background: linear-gradient(135deg, rgba(255,26,58,.12) 0%, rgba(255,26,58,.04) 100%);
-  border: 1px solid rgba(255,26,58,.25);
-  border-radius: var(--r);
-  padding: 16px 18px;
-  display: none;
-  flex-direction: column;
-  gap: 10px;
-  animation: banner-in .3s ease;
-}
-#alert-banner.show { display: flex; }
-@keyframes banner-in { from{opacity:0;transform:translateY(-8px)} to{opacity:1;transform:translateY(0)} }
-
-#banner-type {
-  display: flex;
-  align-items: center;
-  gap: 10px;
-}
-#banner-icon { font-size: 24px; }
-#banner-title {
-  font-family: var(--raj);
-  font-size: 20px;
-  font-weight: 700;
-  color: var(--red);
-  letter-spacing: 1px;
-}
-#banner-cities {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 6px;
-}
-.city-chip {
-  background: rgba(255,26,58,.12);
-  border: 1px solid rgba(255,26,58,.2);
-  border-radius: 20px;
-  padding: 4px 10px;
-  font-size: 12px;
-  font-family: var(--heb);
-  font-weight: 500;
-  color: var(--text2);
-  white-space: nowrap;
-}
-.city-chip.user {
-  background: rgba(255,26,58,.22);
-  border-color: rgba(255,26,58,.4);
-  color: var(--text);
-  font-weight: 700;
-}
-#banner-shelter {
-  display: flex;
-  align-items: center;
-  gap: 8px;
-  padding: 10px 14px;
-  background: rgba(0,0,0,.25);
-  border-radius: 10px;
-  border: 1px solid rgba(255,26,58,.15);
-}
-#shelter-countdown {
-  font-family: var(--mono);
-  font-size: 28px;
-  color: var(--red);
-  font-weight: bold;
-  min-width: 60px;
-}
-#shelter-label {
-  font-size: 13px;
-  color: var(--text2);
-  line-height: 1.4;
-}
-
-/* Stats row */
-#stats-row {
-  display: grid;
-  grid-template-columns: repeat(3, 1fr);
-  gap: 8px;
-  width: 100%;
-}
-.stat-card {
-  background: var(--panel);
-  border: 1px solid var(--border);
-  border-radius: 14px;
-  padding: 14px 10px;
-  text-align: center;
-  display: flex;
-  flex-direction: column;
-  gap: 4px;
-}
-.stat-num {
-  font-family: var(--raj);
-  font-size: 26px;
-  font-weight: 700;
-  color: var(--text);
-  line-height: 1;
-}
-.stat-lbl {
-  font-size: 10px;
-  color: var(--text3);
-  letter-spacing: .5px;
-}
-
-/* GPS / My City */
-#my-city-row {
-  display: flex;
-  align-items: center;
-  gap: 12px;
-  padding: 14px 16px;
-}
-#gps-icon {
-  width: 36px; height: 36px;
-  border-radius: 10px;
-  background: rgba(0,200,255,.08);
-  border: 1px solid rgba(0,200,255,.15);
-  display: flex; align-items: center; justify-content: center;
-  font-size: 18px;
-  flex-shrink: 0;
-}
-#city-name { font-size: 14px; font-weight: 700; }
-#city-sub  { font-size: 11px; color: var(--text3); margin-top: 2px; }
-#gps-btn {
-  margin-right: auto;
-  margin-left: 0;
-  background: rgba(0,200,255,.08);
-  border: 1px solid rgba(0,200,255,.2);
-  border-radius: 20px;
-  color: var(--cyan);
-  font-family: var(--heb);
-  font-size: 12px;
-  font-weight: 600;
-  padding: 6px 14px;
-  cursor: pointer;
-  white-space: nowrap;
-  flex-shrink: 0;
-  align-self: center;
-}
-#gps-btn:active { opacity: .7; }
-
-/* ═══════════════════════════════════════════
-   PAGE: HISTORY
-═══════════════════════════════════════════ */
-#page-history { padding: 16px; }
-.page-title {
-  font-family: var(--raj);
-  font-size: 18px;
-  font-weight: 700;
-  letter-spacing: 2px;
-  color: var(--text3);
-  margin-bottom: 16px;
-  display: flex;
-  align-items: center;
-  gap: 8px;
-}
-.tab-bar {
-  display: flex;
-  gap: 6px;
-  margin-bottom: 16px;
-}
-.htab {
-  flex: 1;
-  background: var(--panel);
-  border: 1px solid var(--border);
-  border-radius: 10px;
-  color: var(--text3);
-  font-family: var(--heb);
-  font-size: 13px;
-  font-weight: 600;
-  padding: 9px;
-  cursor: pointer;
-  transition: all .2s;
-  text-align: center;
-}
-.htab.on {
-  background: rgba(0,229,160,.08);
-  border-color: rgba(0,229,160,.25);
-  color: var(--live);
-}
-#hist-list { display: flex; flex-direction: column; gap: 8px; }
-.h-entry {
-  background: var(--panel);
-  border: 1px solid var(--border);
-  border-radius: 14px;
-  padding: 14px 16px;
-  display: flex;
-  gap: 12px;
-  align-items: flex-start;
-  transition: border-color .2s;
-}
-.h-entry:hover { border-color: var(--border-hi); }
-.h-dot-wrap { padding-top: 4px; }
-.h-dot {
-  width: 10px; height: 10px;
-  border-radius: 50%;
-  border: 2px solid currentColor;
-  flex-shrink: 0;
-}
-.h-body { flex: 1; min-width: 0; }
-.h-type {
-  font-family: var(--raj);
-  font-size: 15px;
-  font-weight: 600;
-  letter-spacing: .5px;
-  margin-bottom: 4px;
-}
-.h-cities {
-  font-size: 12px;
-  color: var(--text2);
-  white-space: nowrap;
-  overflow: hidden;
-  text-overflow: ellipsis;
-}
-.h-time {
-  font-family: var(--mono);
-  font-size: 11px;
-  color: var(--text3);
-  margin-top: 6px;
-}
-.empty {
-  text-align: center;
-  padding: 60px 20px;
-  color: var(--text3);
-  font-size: 14px;
-  line-height: 2;
-}
-
-/* ═══════════════════════════════════════════
-   PAGE: AI ANALYSIS
-═══════════════════════════════════════════ */
-#page-ai { padding: 16px; }
-#ai-key-card {
-  background: var(--panel);
-  border: 1px solid var(--border);
-  border-radius: var(--r);
-  padding: 18px;
-  margin-bottom: 16px;
-}
-.card-title {
-  font-family: var(--raj);
-  font-size: 14px;
-  font-weight: 600;
-  letter-spacing: 1.5px;
-  color: var(--text3);
-  margin-bottom: 12px;
-}
-.input-row {
-  display: flex;
-  gap: 8px;
-  align-items: center;
-}
-.key-input {
-  flex: 1;
-  background: rgba(0,0,0,.3);
-  border: 1px solid var(--border-hi);
-  border-radius: 10px;
-  color: var(--text);
-  font-family: var(--mono);
-  font-size: 12px;
-  padding: 11px 14px;
-  outline: none;
-  -webkit-appearance: none;
-  transition: border-color .2s;
-}
-.key-input:focus { border-color: rgba(0,229,160,.3); }
-.btn-sm {
-  background: rgba(0,229,160,.08);
-  border: 1px solid rgba(0,229,160,.2);
-  border-radius: 10px;
-  color: var(--live);
-  font-family: var(--heb);
-  font-size: 13px;
-  font-weight: 700;
-  padding: 11px 16px;
-  cursor: pointer;
-  white-space: nowrap;
-  transition: all .2s;
-  flex-shrink: 0;
-}
-.btn-sm:active { opacity: .7; }
-#ai-status { font-size: 12px; color: var(--text3); margin-top: 8px; min-height: 18px; }
-
-#ai-chat {
-  background: var(--panel);
-  border: 1px solid var(--border);
-  border-radius: var(--r);
-  padding: 18px;
-  display: flex;
-  flex-direction: column;
-  gap: 12px;
-  min-height: 200px;
-}
-#ai-response {
-  font-size: 14px;
-  color: var(--text2);
-  line-height: 1.7;
-  min-height: 80px;
-  direction: rtl;
-}
-.ai-thinking {
-  display: flex;
-  gap: 5px;
-  align-items: center;
-}
-.ai-thinking span {
-  width: 6px; height: 6px;
-  border-radius: 50%;
-  background: var(--live);
-  opacity: .3;
-  animation: think .9s infinite;
-}
-.ai-thinking span:nth-child(2) { animation-delay: .2s; }
-.ai-thinking span:nth-child(3) { animation-delay: .4s; }
-@keyframes think { 0%,80%,100%{opacity:.3} 40%{opacity:1} }
-
-#ai-analyze-btn {
-  width: 100%;
-  background: linear-gradient(135deg, rgba(0,229,160,.12) 0%, rgba(0,229,160,.04) 100%);
-  border: 1px solid rgba(0,229,160,.2);
-  border-radius: 12px;
-  color: var(--live);
-  font-family: var(--heb);
-  font-size: 15px;
-  font-weight: 700;
-  padding: 14px;
-  cursor: pointer;
-  transition: all .2s;
-  letter-spacing: .5px;
-}
-#ai-analyze-btn:active { opacity: .7; }
-#ai-analyze-btn:disabled { opacity: .4; cursor: default; }
-
-/* ═══════════════════════════════════════════
-   PAGE: SETTINGS
-═══════════════════════════════════════════ */
-#page-settings { padding: 16px; gap: 12px; display: flex; flex-direction: column; }
-.s-card {
-  background: var(--panel);
-  border: 1px solid var(--border);
-  border-radius: var(--r);
-  overflow: hidden;
-}
-.s-item {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  padding: 16px 18px;
-  border-bottom: 1px solid var(--border);
-  gap: 12px;
-}
-.s-item:last-child { border-bottom: none; }
-.s-left { display: flex; align-items: center; gap: 12px; min-width: 0; }
-.s-ico {
-  width: 36px; height: 36px;
-  border-radius: 10px;
-  display: flex; align-items: center; justify-content: center;
-  font-size: 18px;
-  flex-shrink: 0;
-}
-.s-title { font-size: 14px; font-weight: 600; }
-.s-sub   { font-size: 11px; color: var(--text3); margin-top: 2px; }
-
-/* Toggle */
-.tog {
-  position: relative;
-  width: 48px; height: 28px;
-  flex-shrink: 0;
-}
-.tog input { opacity: 0; width: 0; height: 0; }
-.tog-track {
-  position: absolute;
-  inset: 0;
-  background: var(--surface);
-  border: 1px solid var(--border);
-  border-radius: 14px;
-  cursor: pointer;
-  transition: all .25s;
-}
-.tog-track::after {
-  content: '';
-  position: absolute;
-  top: 3px; right: 3px;
-  width: 20px; height: 20px;
-  border-radius: 50%;
-  background: var(--text3);
-  transition: all .25s;
-}
-.tog input:checked ~ .tog-track { background: rgba(0,229,160,.2); border-color: rgba(0,229,160,.4); }
-.tog input:checked ~ .tog-track::after { background: var(--live); transform: translateX(-20px); box-shadow: 0 0 10px rgba(0,229,160,.4); }
-
-/* Select */
-.s-sel {
-  background: var(--surface);
-  border: 1px solid var(--border);
-  border-radius: 8px;
-  color: var(--text);
-  font-family: var(--heb);
-  font-size: 13px;
-  padding: 7px 10px;
-  cursor: pointer;
-  outline: none;
-  -webkit-appearance: none;
-  text-align: center;
-}
-
-/* Connection status in settings */
-#conn-info {
-  font-family: var(--mono);
-  font-size: 11px;
-  color: var(--text3);
-  padding: 10px 18px;
-  text-align: center;
-  line-height: 1.8;
-  border-top: 1px solid var(--border);
-}
-
-/* Action Button */
-.action-btn {
-  width: 100%;
-  background: var(--surface);
-  border: 1px solid var(--border);
-  border-radius: 12px;
-  color: var(--text2);
-  font-family: var(--heb);
-  font-size: 14px;
-  font-weight: 600;
-  padding: 14px;
-  cursor: pointer;
-  transition: all .2s;
-}
-.action-btn:active { opacity: .7; }
-#test-btn-res {
-  text-align: center;
-  font-size: 12px;
-  color: var(--text3);
-  min-height: 18px;
-}
-
-/* ═══════════════════════════════════════════
-   BOTTOM NAV
-═══════════════════════════════════════════ */
-#nav {
-  position: relative;
-  z-index: 10;
-  display: grid;
-  grid-template-columns: repeat(5, 1fr);
-  border-top: 1px solid var(--border);
-  background: rgba(3,6,8,.92);
-  backdrop-filter: blur(20px);
-}
-.nav-btn {
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  justify-content: center;
-  gap: 4px;
-  padding: 10px 4px 8px;
-  background: none;
-  border: none;
-  cursor: pointer;
-  transition: all .2s;
-  position: relative;
-  -webkit-tap-highlight-color: transparent;
-}
-.nav-btn::after {
-  content: '';
-  position: absolute;
-  bottom: 0; left: 25%; right: 25%;
-  height: 2px;
-  border-radius: 2px;
-  background: var(--live);
-  transform: scaleX(0);
-  transition: transform .25s cubic-bezier(.2,.8,.2,1);
-}
-.nav-btn.on::after { transform: scaleX(1); }
-.nav-icon { font-size: 20px; transition: transform .2s; }
-.nav-btn.on .nav-icon { transform: scale(1.1); }
-.nav-lbl {
-  font-family: var(--raj);
-  font-size: 9px;
-  font-weight: 600;
-  letter-spacing: 1.5px;
-  color: var(--text3);
-  transition: color .2s;
-}
-.nav-btn.on .nav-lbl { color: var(--live); }
-.nav-badge {
-  position: absolute;
-  top: 6px;
-  left: 50%;
-  transform: translateX(6px);
-  width: 8px; height: 8px;
-  border-radius: 50%;
-  background: var(--red);
-  display: none;
-  box-shadow: 0 0 8px var(--red);
-}
-.nav-badge.show { display: block; }
-
-/* ═══════════════════════════════════════════
-   ALERT OVERLAY (fullscreen)
-═══════════════════════════════════════════ */
-#overlay {
-  position: fixed;
-  inset: 0;
-  z-index: 100;
-  background: rgba(3,6,8,.97);
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  justify-content: center;
-  padding: 40px 24px;
-  gap: 24px;
-  opacity: 0;
-  pointer-events: none;
-  transition: opacity .3s;
-  overflow-y: auto;
-}
-#overlay.show { opacity: 1; pointer-events: all; }
-#overlay::before {
-  content: '';
-  position: fixed;
-  inset: 0;
-  background: radial-gradient(ellipse at center, rgba(255,26,58,.15) 0%, transparent 70%);
-  pointer-events: none;
-  animation: ov-pulse 1s infinite;
-}
-@keyframes ov-pulse { 0%,100%{opacity:.8} 50%{opacity:.3} }
-
-#ov-threat {
-  font-family: var(--raj);
-  font-size: 12px;
-  font-weight: 600;
-  letter-spacing: 4px;
-  color: var(--red);
-  opacity: .8;
-}
-#ov-icon { font-size: 64px; animation: ov-icon-pulse 1s infinite; }
-@keyframes ov-icon-pulse { 0%,100%{transform:scale(1)} 50%{transform:scale(1.08)} }
-
-#ov-title {
-  font-family: var(--raj);
-  font-size: 32px;
-  font-weight: 700;
-  color: var(--red);
-  letter-spacing: 2px;
-  text-align: center;
-  text-shadow: 0 0 30px rgba(255,26,58,.5);
-}
-
-/* Countdown ring */
-#ov-ring-wrap {
-  position: relative;
-  width: 130px; height: 130px;
-}
-#ov-ring-svg {
-  width: 130px; height: 130px;
-  transform: rotate(-90deg);
-}
-#ov-ring-circle {
-  fill: none;
-  stroke: var(--red);
-  stroke-width: 3;
-  stroke-linecap: round;
-  stroke-dasharray: 352;
-  stroke-dashoffset: 0;
-  transition: stroke-dashoffset 1s linear;
-  filter: drop-shadow(0 0 6px rgba(255,26,58,.6));
-}
-#ov-ring-bg {
-  fill: none;
-  stroke: rgba(255,26,58,.1);
-  stroke-width: 3;
-}
-#ov-countdown {
-  position: absolute;
-  inset: 0;
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  justify-content: center;
-}
-#ov-secs {
-  font-family: var(--mono);
-  font-size: 36px;
-  color: var(--red);
-  line-height: 1;
-}
-#ov-secs-lbl {
-  font-size: 10px;
-  color: var(--text3);
-  letter-spacing: 2px;
-}
-
-#ov-cities {
-  display: flex;
-  flex-wrap: wrap;
-  justify-content: center;
-  gap: 7px;
-  max-width: 340px;
-}
-.ov-chip {
-  background: rgba(255,26,58,.1);
-  border: 1px solid rgba(255,26,58,.2);
-  border-radius: 20px;
-  padding: 5px 12px;
-  font-size: 13px;
-  color: var(--text2);
-  font-family: var(--heb);
-}
-.ov-chip.me {
-  background: rgba(255,26,58,.2);
-  border-color: rgba(255,26,58,.5);
-  color: #fff;
-  font-weight: 700;
-}
-
-#ov-dismiss {
-  background: rgba(255,255,255,.06);
-  border: 1px solid rgba(255,255,255,.12);
-  border-radius: 12px;
-  color: var(--text2);
-  font-family: var(--heb);
-  font-size: 14px;
-  font-weight: 600;
-  padding: 13px 40px;
-  cursor: pointer;
-  margin-top: 8px;
-}
-#ov-dismiss:active { opacity: .7; }
-
-/* ═══════════════════════════════════════════
-   MISC
-═══════════════════════════════════════════ */
-.snd-type-btn {
-  background: var(--surface);
-  border: 1px solid var(--border);
-  border-radius: 10px;
-  color: var(--text3);
-  font-family: var(--heb);
-  font-size: 13px;
-  font-weight: 600;
-  padding: 9px;
-  cursor: pointer;
-  transition: all .2s;
-  text-align: center;
-}
-.snd-type-btn.on {
-  background: rgba(255,149,0,.1);
-  border-color: rgba(255,149,0,.3);
-  color: #ff9500;
-}
-.sep { height: 1px; background: var(--border); width: 100%; }
-.scrollable { overflow-y: auto; -webkit-overflow-scrolling: touch; }
+  --void:#030608; --panel:#0d1520; --surface:#0a1018;
+  --border:rgba(255,255,255,.08); --border2:rgba(255,255,255,.14);
+  --live:#00e5a0; --cyan:#00c8ff; --red:#ff1a3a; --amber:#ff9500;
+  --text:#e8f0f8; --text2:rgba(232,240,248,.6); --text3:rgba(232,240,248,.32);
+  --raj:'Rajdhani',sans-serif; --heb:'Heebo',sans-serif; --mono:'Share Tech Mono',monospace;
+  --r:14px; --safe-t:env(safe-area-inset-top,0px); --safe-b:env(safe-area-inset-bottom,0px);
+}
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+html,body{height:100%;overflow:hidden;background:var(--void);color:var(--text);
+  font-family:var(--heb);-webkit-font-smoothing:antialiased;
+  -webkit-tap-highlight-color:transparent;user-select:none}
+#app{display:grid;grid-template-rows:auto 1fr auto;
+  height:100vh;height:100dvh;
+  padding-top:var(--safe-t);padding-bottom:var(--safe-b)}
+/* TOPBAR */
+#topbar{display:flex;align-items:center;justify-content:space-between;
+  padding:10px 18px;border-bottom:1px solid var(--border);
+  background:rgba(3,6,8,.95);backdrop-filter:blur(16px);z-index:10;position:relative}
+#logo{display:flex;align-items:center;gap:9px}
+#logo-ico{width:32px;height:32px;background:linear-gradient(135deg,#ff1a3a,#900015);
+  border-radius:9px;display:flex;align-items:center;justify-content:center;
+  font-size:17px;box-shadow:0 0 14px rgba(255,26,58,.3);flex-shrink:0}
+#logo-name{font-family:var(--raj);font-size:20px;font-weight:700;letter-spacing:2px}
+#logo-sub{font-size:9px;color:var(--text3);letter-spacing:1px}
+#spill{display:flex;align-items:center;gap:6px;
+  background:var(--panel);border:1px solid var(--border);
+  border-radius:20px;padding:5px 11px;font-family:var(--mono);font-size:11px;color:var(--text2)}
+#refresh-btn{background:rgba(0,229,160,.07);border:1px solid rgba(0,229,160,.18);
+  border-radius:18px;color:var(--live);font-family:var(--heb);font-size:13px;
+  font-weight:700;padding:5px 13px;cursor:pointer;margin-right:6px}
+.dot{width:7px;height:7px;border-radius:50%;background:var(--text3);flex-shrink:0;transition:background .3s}
+.dot.on{background:var(--live);box-shadow:0 0 7px var(--live);animation:blink 2s infinite}
+.dot.err{background:var(--red);animation:blink .5s infinite}
+.dot.wait{background:var(--amber);animation:blink 1s infinite}
+@keyframes blink{0%,100%{opacity:1}50%{opacity:.3}}
+/* PAGES */
+#main{position:relative;overflow:hidden}
+.page{position:absolute;inset:0;overflow-y:auto;-webkit-overflow-scrolling:touch;
+  opacity:0;pointer-events:none;transition:opacity .2s}
+.page.on{opacity:1;pointer-events:all}
+/* RADAR PAGE */
+#page-home{display:flex;flex-direction:column;align-items:center;padding:20px 16px 16px;gap:16px}
+/* ORB */
+#orb-wrap{position:relative;width:200px;height:200px;flex-shrink:0}
+.ring{position:absolute;border-radius:50%;border:1px solid var(--live);
+  opacity:0;animation:ro 3s ease-out infinite}
+.ring:nth-child(1){inset:0;animation-delay:0s}
+.ring:nth-child(2){inset:-18px;animation-delay:1s}
+.ring:nth-child(3){inset:-36px;animation-delay:2s}
+@keyframes ro{0%{opacity:.5;transform:scale(.86)}100%{opacity:0;transform:scale(1.12)}}
+.ring.al{border-color:var(--red);animation-duration:1s}
+.ring.al:nth-child(1){animation-delay:0s}
+.ring.al:nth-child(2){animation-delay:.33s}
+.ring.al:nth-child(3){animation-delay:.66s}
+#orb{position:absolute;inset:18px;border-radius:50%;
+  background:radial-gradient(circle at 40% 35%,rgba(0,229,160,.12) 0%,transparent 70%),var(--panel);
+  border:1.5px solid rgba(0,229,160,.22);
+  display:flex;flex-direction:column;align-items:center;justify-content:center;gap:3px;
+  box-shadow:0 0 36px rgba(0,229,160,.06);transition:all .4s}
+#orb.al{background:radial-gradient(circle at 40% 35%,rgba(255,26,58,.18) 0%,transparent 70%),var(--panel);
+  border-color:rgba(255,26,58,.35);animation:shake .08s infinite}
+@keyframes shake{0%,100%{transform:translate(0,0)}25%{transform:translate(-1px,1px)}75%{transform:translate(1px,-1px)}}
+#orb-ic{font-size:36px}
+#orb-lb{font-family:var(--raj);font-size:13px;font-weight:700;letter-spacing:3px;color:var(--live)}
+#orb-lb.al{color:var(--red)}
+#orb-ct{font-family:var(--mono);font-size:10px;color:var(--text3)}
+/* TICKER */
+#ticker{font-family:var(--mono);font-size:10px;color:var(--text3);text-align:center;width:100%}
+/* ALERT BANNER */
+#al-banner{width:100%;background:linear-gradient(135deg,rgba(255,26,58,.11),rgba(255,26,58,.03));
+  border:1px solid rgba(255,26,58,.22);border-radius:var(--r);padding:14px 16px;
+  display:none;flex-direction:column;gap:9px;animation:bin .3s ease}
+#al-banner.on{display:flex}
+@keyframes bin{from{opacity:0;transform:translateY(-6px)}to{opacity:1;transform:translateY(0)}}
+#al-type{display:flex;align-items:center;gap:9px}
+#al-ic{font-size:22px}
+#al-title{font-family:var(--raj);font-size:18px;font-weight:700;color:var(--red);letter-spacing:.5px}
+#al-cities{display:flex;flex-wrap:wrap;gap:5px}
+.chip{background:rgba(255,26,58,.1);border:1px solid rgba(255,26,58,.18);
+  border-radius:20px;padding:3px 9px;font-size:11px;color:var(--text2)}
+.chip.me{background:rgba(255,26,58,.2);border-color:rgba(255,26,58,.4);color:#fff;font-weight:700}
+#al-shelter{display:flex;align-items:center;gap:10px;padding:9px 12px;
+  background:rgba(0,0,0,.22);border-radius:9px;border:1px solid rgba(255,26,58,.12)}
+#sh-cd{font-family:var(--mono);font-size:26px;color:var(--red);min-width:52px}
+#sh-lb{font-size:12px;color:var(--text2);line-height:1.4}
+/* STATS */
+#stats{display:grid;grid-template-columns:repeat(3,1fr);gap:7px;width:100%}
+.sc{background:var(--panel);border:1px solid var(--border);border-radius:12px;
+  padding:12px 8px;text-align:center}
+.sn{font-family:var(--raj);font-size:24px;font-weight:700;line-height:1}
+.sl{font-size:10px;color:var(--text3);margin-top:3px;letter-spacing:.3px}
+/* WATCH CARD */
+#wcard{width:100%;background:var(--panel);border:1px solid var(--border);
+  border-radius:var(--r);overflow:hidden}
+.wcard-hdr{padding:10px 14px;border-bottom:1px solid var(--border);
+  display:flex;justify-content:space-between;align-items:center}
+.wcard-hdr-t{font-family:var(--raj);font-size:11px;font-weight:700;
+  letter-spacing:2px;color:var(--text3)}
+.wcard-hdr-s{font-size:10px;color:var(--text3)}
+/* GPS ROW */
+#gps-row{display:flex;align-items:center;gap:10px;padding:12px 14px;
+  border-bottom:1px solid var(--border)}
+#gps-ico{width:34px;height:34px;flex-shrink:0;border-radius:9px;
+  background:rgba(0,200,255,.07);border:1px solid rgba(0,200,255,.14);
+  display:flex;align-items:center;justify-content:center;font-size:16px}
+#gps-city{font-size:13px;font-weight:700;flex:1;min-width:0}
+#gps-sub{font-size:10px;color:var(--text3);margin-top:1px}
+#gps-btn{flex-shrink:0;background:rgba(0,200,255,.07);border:1px solid rgba(0,200,255,.18);
+  border-radius:18px;color:var(--cyan);font-family:var(--heb);font-size:12px;font-weight:600;
+  padding:5px 13px;cursor:pointer}
+/* WATCH LIST */
+#wlist{display:none;flex-wrap:wrap;gap:6px;padding:8px 14px 4px}
+/* ADD ROW */
+#wadd{display:flex;gap:7px;padding:0}
+#winp{flex:1;min-width:0;background:rgba(0,0,0,.3);border:1px solid rgba(0,229,160,.22);
+  border-radius:9px;color:var(--text);font-family:var(--heb);font-size:14px;
+  padding:10px 12px;outline:none;-webkit-appearance:none;direction:rtl}
+#winp:focus{border-color:rgba(0,229,160,.5)}
+#wadd-btn{flex-shrink:0;background:rgba(0,229,160,.14);border:1px solid rgba(0,229,160,.35);
+  border-radius:9px;color:var(--live);font-family:var(--heb);font-size:15px;font-weight:700;
+  padding:10px 18px;cursor:pointer}
+/* HISTORY */
+#page-hist{padding:14px}
+/* NATIONAL */
+#page-nat{padding:14px}
+/* AI */
+#page-ai{padding:14px;display:flex;flex-direction:column;gap:12px}
+/* SETTINGS */
+#page-cfg{padding:14px;display:flex;flex-direction:column;gap:10px}
+/* SHARED */
+.pg-title{font-family:var(--raj);font-size:16px;font-weight:700;letter-spacing:2px;
+  color:var(--text3);margin-bottom:12px;display:flex;align-items:center;gap:7px}
+.card{background:var(--panel);border:1px solid var(--border);border-radius:var(--r);overflow:hidden}
+.card-p{padding:14px 16px}
+.row{display:flex;align-items:center;justify-content:space-between;padding:13px 16px;
+  border-bottom:1px solid var(--border)}
+.row:last-child{border-bottom:none}
+.row-l{display:flex;align-items:center;gap:10px}
+.row-ico{width:34px;height:34px;border-radius:9px;display:flex;align-items:center;
+  justify-content:center;font-size:17px;flex-shrink:0}
+.row-t{font-size:13px;font-weight:600}
+.row-s{font-size:10px;color:var(--text3);margin-top:2px}
+/* TOGGLE */
+.tog{position:relative;width:46px;height:26px;flex-shrink:0;cursor:pointer}
+.tog input{opacity:0;width:0;height:0;position:absolute}
+.tog-tr{position:absolute;inset:0;background:var(--surface);border:1px solid var(--border);
+  border-radius:13px;transition:all .22s;cursor:pointer}
+.tog-tr::after{content:'';position:absolute;top:3px;right:3px;width:18px;height:18px;
+  border-radius:50%;background:var(--text3);transition:all .22s}
+.tog input:checked~.tog-tr{background:rgba(0,229,160,.18);border-color:rgba(0,229,160,.35)}
+.tog input:checked~.tog-tr::after{background:var(--live);transform:translateX(-20px);
+  box-shadow:0 0 8px rgba(0,229,160,.4)}
+/* SELECT */
+.sel{background:var(--surface);border:1px solid var(--border);border-radius:7px;
+  color:var(--text);font-family:var(--heb);font-size:12px;padding:6px 9px;
+  outline:none;-webkit-appearance:none;cursor:pointer}
+/* HTABS */
+.tabs{display:flex;gap:5px;margin-bottom:12px}
+.tab{flex:1;background:var(--panel);border:1px solid var(--border);border-radius:9px;
+  color:var(--text3);font-family:var(--heb);font-size:12px;font-weight:600;
+  padding:8px;cursor:pointer;text-align:center}
+.tab.on{background:rgba(0,229,160,.07);border-color:rgba(0,229,160,.22);color:var(--live)}
+/* HIST ENTRIES */
+#hlist,#nlist{display:flex;flex-direction:column;gap:7px}
+.he{background:var(--panel);border:1px solid var(--border);border-radius:12px;
+  padding:12px 14px;display:flex;gap:10px}
+.he-dot{width:9px;height:9px;border-radius:50%;border:2px solid currentColor;
+  flex-shrink:0;margin-top:4px}
+.he-t{font-family:var(--raj);font-size:14px;font-weight:600;margin-bottom:3px}
+.he-c{font-size:11px;color:var(--text2);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.he-ts{font-family:var(--mono);font-size:10px;color:var(--text3);margin-top:5px}
+.empty{text-align:center;padding:50px 20px;color:var(--text3);font-size:13px;line-height:2.2}
+/* AI */
+#ai-inp{width:100%;background:rgba(0,0,0,.38);border:1px solid var(--border2);
+  border-radius:9px;color:var(--text);font-family:var(--mono);font-size:11px;
+  padding:11px 12px;outline:none;-webkit-appearance:none;direction:ltr;text-align:left}
+#ai-st{font-size:11px;color:var(--text3);margin-top:7px;min-height:16px}
+#ai-btn{width:100%;background:linear-gradient(135deg,rgba(0,229,160,.13),rgba(0,229,160,.04));
+  border:1px solid rgba(0,229,160,.25);border-radius:12px;color:var(--live);
+  font-family:var(--heb);font-size:15px;font-weight:700;padding:14px;cursor:pointer}
+#ai-btn:disabled{opacity:.35;cursor:default}
+#ai-out{font-size:13px;color:var(--text3);line-height:1.85;direction:rtl;min-height:100px}
+.think{display:flex;gap:5px;align-items:center;padding:8px 0}
+.think span{width:6px;height:6px;border-radius:50%;background:var(--live);
+  opacity:.3;animation:th .9s infinite}
+.think span:nth-child(2){animation-delay:.2s}.think span:nth-child(3){animation-delay:.4s}
+@keyframes th{0%,80%,100%{opacity:.3}40%{opacity:1}}
+/* VOL SLIDER */
+input[type=range]{width:100%;accent-color:var(--live);height:4px;cursor:pointer}
+/* BIG BTN */
+.big-btn{width:100%;background:var(--surface);border:1px solid var(--border);
+  border-radius:10px;color:var(--text2);font-family:var(--heb);font-size:13px;
+  font-weight:600;padding:13px;cursor:pointer}
+/* NAV */
+#nav{display:grid;grid-template-columns:repeat(5,1fr);
+  border-top:1px solid var(--border);background:rgba(3,6,8,.93);
+  backdrop-filter:blur(18px);z-index:10;position:relative}
+.nb{display:flex;flex-direction:column;align-items:center;justify-content:center;
+  gap:3px;padding:9px 2px 7px;background:none;border:none;cursor:pointer;
+  position:relative;-webkit-tap-highlight-color:transparent}
+.nb::after{content:'';position:absolute;bottom:0;left:20%;right:20%;height:2px;
+  border-radius:2px;background:var(--live);transform:scaleX(0);transition:transform .22s}
+.nb.on::after{transform:scaleX(1)}
+.ni{font-size:19px;transition:transform .18s}
+.nb.on .ni{transform:scale(1.12)}
+.nl{font-family:var(--raj);font-size:8px;font-weight:700;letter-spacing:1.2px;
+  color:var(--text3);transition:color .18s}
+.nb.on .nl{color:var(--live)}
+.nbadge{position:absolute;top:5px;left:50%;transform:translateX(5px);
+  width:7px;height:7px;border-radius:50%;background:var(--red);
+  display:none;box-shadow:0 0 6px var(--red)}
+.nbadge.on{display:block}
+/* OVERLAY */
+#ov{position:fixed;inset:0;z-index:100;background:rgba(3,6,8,.97);
+  display:flex;flex-direction:column;align-items:center;justify-content:center;
+  gap:18px;padding:36px 22px;opacity:0;pointer-events:none;transition:opacity .25s;overflow-y:auto}
+#ov.on{opacity:1;pointer-events:all}
+#ov::before{content:'';position:fixed;inset:0;pointer-events:none;
+  background:radial-gradient(ellipse at center,rgba(255,26,58,.13) 0%,transparent 68%);
+  animation:op 1s infinite}
+@keyframes op{0%,100%{opacity:.8}50%{opacity:.3}}
+#ov-threat{font-family:var(--raj);font-size:11px;font-weight:700;letter-spacing:4px;color:var(--red);opacity:.75}
+#ov-ic{font-size:58px;animation:oic 1s infinite}
+@keyframes oic{0%,100%{transform:scale(1)}50%{transform:scale(1.07)}}
+#ov-title{font-family:var(--raj);font-size:28px;font-weight:700;color:var(--red);
+  letter-spacing:1.5px;text-align:center;text-shadow:0 0 24px rgba(255,26,58,.4)}
+#ov-ring{position:relative;width:120px;height:120px}
+#ov-svg{width:120px;height:120px;transform:rotate(-90deg)}
+#ov-circ{fill:none;stroke:var(--red);stroke-width:3;stroke-linecap:round;
+  stroke-dasharray:326;transition:stroke-dashoffset 1s linear;
+  filter:drop-shadow(0 0 5px rgba(255,26,58,.55))}
+#ov-bg{fill:none;stroke:rgba(255,26,58,.1);stroke-width:3}
+#ov-cd{position:absolute;inset:0;display:flex;flex-direction:column;
+  align-items:center;justify-content:center}
+#ov-s{font-family:var(--mono);font-size:34px;color:var(--red);line-height:1}
+#ov-sl{font-size:9px;color:var(--text3);letter-spacing:2px}
+#ov-cities{display:flex;flex-wrap:wrap;justify-content:center;gap:6px;max-width:320px}
+.ov-chip{background:rgba(255,26,58,.09);border:1px solid rgba(255,26,58,.18);
+  border-radius:18px;padding:4px 11px;font-size:12px;color:var(--text2)}
+.ov-chip.me{background:rgba(255,26,58,.2);border-color:rgba(255,26,58,.45);
+  color:#fff;font-weight:700}
+#ov-ok{background:rgba(255,255,255,.06);border:1px solid rgba(255,255,255,.1);
+  border-radius:11px;color:var(--text2);font-family:var(--heb);font-size:13px;
+  font-weight:600;padding:12px 36px;cursor:pointer;margin-top:6px}
+/* NAT STRIP */
+#nat-strip{display:none;background:linear-gradient(135deg,rgba(255,149,0,.11),rgba(255,149,0,.03));
+  border:1px solid rgba(255,149,0,.28);border-radius:12px;padding:12px 14px;margin-bottom:10px}
 </style>
 </head>
 <body>
-<!-- Background canvas -->
-<canvas id="bg-canvas"></canvas>
+<div id="app">
 
-<!-- Alert overlay -->
-<div id="overlay">
-  <div id="ov-threat">● ● ● התרעה פעילה ● ● ●</div>
-  <div id="ov-icon">🚨</div>
-  <div id="ov-title">ירי רקטות וטילים</div>
-  <div id="ov-ring-wrap">
-    <svg id="ov-ring-svg" viewBox="0 0 130 130">
-      <circle id="ov-ring-bg" cx="65" cy="65" r="56"/>
-      <circle id="ov-ring-circle" cx="65" cy="65" r="56"/>
-    </svg>
-    <div id="ov-countdown">
-      <div id="ov-secs">90</div>
-      <div id="ov-secs-lbl">שניות</div>
+<!-- TOPBAR -->
+<div id="topbar">
+  <div id="logo">
+    <div id="logo-ico">🛡️</div>
+    <div>
+      <div id="logo-name">MAGEN</div>
+      <div id="logo-sub">פיקוד העורף</div>
     </div>
   </div>
-  <div id="ov-cities"></div>
-  <button id="ov-dismiss" onclick="dismissOverlay()">הבנתי — כנסו למרחב המוגן</button>
+  <div style="display:flex;align-items:center;gap:8px">
+    <button id="refresh-btn" onclick="manualRefresh()">↻ רענן</button>
+    <div id="spill">
+      <div class="dot wait" id="dot"></div>
+      <span id="stxt">מתחבר</span>
+    </div>
+  </div>
 </div>
 
-<div id="app">
-  <!-- TOP BAR -->
-  <div id="topbar">
-    <div id="logo">
-      <div id="logo-icon">🛡️</div>
-      <div>
-        <div id="logo-text">MAGEN</div>
-        <div id="logo-sub">פיקוד העורף</div>
-      </div>
-    </div>
-    <div id="status-pill">
-      <div class="sdot wait" id="sdot"></div>
-      <span id="stext">מתחבר</span>
-    </div>
-  </div>
+<!-- MAIN -->
+<div id="main">
 
-  <!-- MAIN -->
-  <div id="main">
-
-    <!-- ── RADAR PAGE ── -->
-    <div class="page active" id="page-radar">
-      <div id="orb-wrap">
-        <div class="ring" id="r1"></div>
-        <div class="ring" id="r2"></div>
-        <div class="ring" id="r3"></div>
-        <div id="orb">
-          <div id="orb-icon">✅</div>
-          <div id="orb-label">CLEAR</div>
-          <div id="orb-count" style="display:none">0 יישובים</div>
-        </div>
-      </div>
-
-      <!-- Live data bar -->
-      <div style="display:flex;align-items:center;gap:8px;width:100%">
-        <div id="fetch-spin" style="
-          width:14px;height:14px;border-radius:50%;
-          border:2px solid rgba(0,229,160,.2);
-          border-top-color:var(--live);
-          flex-shrink:0;opacity:0;
-          transition:opacity .3s;
-          animation:spin 1s linear infinite"></div>
-        <div id="ticker" style="flex:1;font-family:var(--mono);font-size:11px;color:var(--text3)">טוען נתונים...</div>
-        <button onclick="manualRefresh()" style="
-          background:rgba(0,229,160,.07);
-          border:1px solid rgba(0,229,160,.18);
-          border-radius:8px;padding:5px 11px;
-          color:var(--live);font-family:var(--heb);
-          font-size:12px;font-weight:700;cursor:pointer;
-          flex-shrink:0" title="רענן עכשיו">↻ רענן</button>
-      </div>
-      <style>@keyframes spin{to{transform:rotate(360deg)}}</style>
-
-      <!-- Alert banner (shown when active alert) -->
-      <div id="alert-banner">
-        <div id="banner-type">
-          <div id="banner-icon">🚀</div>
-          <div id="banner-title">ירי רקטות</div>
-        </div>
-        <div id="banner-cities"></div>
-        <div id="banner-shelter">
-          <div id="shelter-countdown">--</div>
-          <div id="shelter-label">שניות למרחב המוגן<br><span style="font-size:10px;color:var(--text3)" id="shelter-city"></span></div>
-        </div>
-      </div>
-
-      <!-- Stats -->
-      <div id="stats-row">
-        <div class="stat-card">
-          <div class="stat-num" id="st-today">0</div>
-          <div class="stat-lbl">התרעות היום</div>
-        </div>
-        <div class="stat-card">
-          <div class="stat-num" id="st-cities">0</div>
-          <div class="stat-lbl">יישובים</div>
-        </div>
-        <div class="stat-card">
-          <div class="stat-num" id="st-quiet">--</div>
-          <div class="stat-lbl">שעות שקט</div>
-        </div>
-      </div>
-
-      <!-- Watch Areas Card -->
-      <div id="watch-card" style="width:100%;background:var(--panel);border:1px solid var(--border);border-radius:var(--r);overflow:hidden">
-
-        <!-- Header -->
-        <div style="padding:11px 16px;border-bottom:1px solid var(--border);display:flex;align-items:center;justify-content:space-between">
-          <span style="font-family:var(--raj);font-size:11px;font-weight:700;letter-spacing:2px;color:var(--text3)">📌 אזורים למעקב</span>
-          <span style="font-size:10px;color:var(--text3)">התרעה תופיע גם עבורם</span>
-        </div>
-
-        <!-- GPS row -->
-        <div id="my-city-row" style="border-bottom:1px solid var(--border);display:flex;align-items:center;gap:10px;padding:13px 16px;justify-content:space-between">
-          <div id="gps-icon">📍</div>
-          <div style="flex:1;min-width:0">
-            <div id="city-name" style="font-size:14px;font-weight:700">מיקום לא ידוע</div>
-            <div id="city-sub" style="font-size:11px;color:var(--text3);margin-top:2px">לחץ זהה GPS</div>
-          </div>
-          <button id="gps-btn" onclick="detectGps()">זהה GPS</button>
-        </div>
-
-        <!-- Added areas list -->
-        <div id="watch-list" style="display:none;padding:8px 14px 4px;flex-wrap:wrap;gap:6px"></div>
-
-        <!-- Add input row -->
-        <div style="padding:10px 14px 12px;display:flex;gap:8px">
-          <input id="area-inp" type="text"
-            placeholder="חפש עיר — לדוגמה: תל אביב"
-            list="cities-datalist"
-            style="flex:1;min-width:0;background:rgba(0,0,0,.3);border:1px solid var(--border-hi);
-              border-radius:10px;color:var(--text);font-family:var(--heb);font-size:13px;
-              padding:9px 12px;outline:none;-webkit-appearance:none;direction:rtl"
-            onkeydown="if(event.key==='Enter'){addWatchArea();event.preventDefault();}">
-          <button onclick="addWatchArea()" style="
-            background:rgba(0,229,160,.1);border:1px solid rgba(0,229,160,.25);
-            border-radius:10px;color:var(--live);font-family:var(--heb);
-            font-size:14px;font-weight:700;padding:9px 18px;cursor:pointer;
-            flex-shrink:0;white-space:nowrap">+ הוסף</button>
-        </div>
-
-        <datalist id="cities-datalist">
-          <option value="תל אביב"><option value="ירושלים"><option value="חיפה">
-          <option value="באר שבע"><option value="אשדוד"><option value="אשקלון">
-          <option value="רחובות"><option value="פתח תקווה"><option value="נתניה">
-          <option value="ראשון לציון"><option value="הרצליה"><option value="רעננה">
-          <option value="כפר סבא"><option value="רמת גן"><option value="גבעתיים">
-          <option value="חולון"><option value="בת ים"><option value="בני ברק">
-          <option value="רמלה"><option value="לוד"><option value="מודיעין">
-          <option value="עכו"><option value="נהריה"><option value="טבריה">
-          <option value="צפת"><option value="קריית שמונה"><option value="נצרת">
-          <option value="אילת"><option value="דימונה"><option value="אופקים">
-          <option value="נתיבות"><option value="שדרות"><option value="סדרות">
-          <option value="יבנה"><option value="גדרה"><option value="קריית גת">
-          <option value="בית שמש"><option value="מעלה אדומים"><option value="אלעד">
-          <option value="ביתר עילית"><option value="חדרה"><option value="עפולה">
-          <option value="קריית ביאליק"><option value="קריית ים"><option value="קריית מוצקין">
-          <option value="קריית אתא"><option value="קריית מלאכי"><option value="ערד">
-          <option value="מגדל העמק"><option value="עומר"><option value="רהט">
-          <option value="נחל עוז"><option value="כפר עזה"><option value="בארי">
-          <option value="ניר עוז"><option value="רעים"><option value="הולית">
-          <option value="יד מרדכי"><option value="גן יבנה"><option value="זיקים">
-          <option value="נירים"><option value="מפלסים"><option value="ספיר">
-        </datalist>
-      </div>
-    </div>
-
-    <!-- ── NATIONAL ALERTS PAGE ── -->
-    <div class="page" id="page-national">
-      <div style="padding:16px 16px 0">
-        <div class="page-title">🗺️ &nbsp;אזעקות ארציות — מידע בלבד</div>
-        <div style="font-size:12px;color:var(--text3);margin-bottom:14px;line-height:1.6">
-          התרעות פעילות <strong style="color:var(--amber)">מחוץ לאזור שלך</strong> — למידע כללי על המצב הביטחוני.
-        </div>
-      </div>
-
-      <!-- Live national alert strip -->
-      <div id="nat-live-strip" style="display:none;margin:0 16px 14px;
-        background:linear-gradient(135deg,rgba(255,149,0,.12),rgba(255,149,0,.04));
-        border:1px solid rgba(255,149,0,.3);border-radius:14px;padding:14px 16px">
-        <div style="display:flex;align-items:center;gap:8px;margin-bottom:8px">
-          <div style="width:8px;height:8px;border-radius:50%;background:var(--amber);
-            box-shadow:0 0 8px var(--amber);animation:blink .6s infinite"></div>
-          <span style="font-family:var(--raj);font-size:13px;font-weight:700;
-            letter-spacing:1.5px;color:var(--amber)">LIVE — אזעקה פעילה באזורים אחרים</span>
-        </div>
-        <div id="nat-live-type" style="font-size:16px;font-weight:700;margin-bottom:8px"></div>
-        <div id="nat-live-cities" style="display:flex;flex-wrap:wrap;gap:5px"></div>
-      </div>
-
-      <!-- Filter -->
-      <div style="padding:0 16px;margin-bottom:12px">
-        <div style="display:flex;gap:6px">
-          <button class="htab on" onclick="setNatFilter('all',this)" id="nf-all">הכל</button>
-          <button class="htab" onclick="setNatFilter('missiles',this)" id="nf-missiles">🚀 רקטות</button>
-          <button class="htab" onclick="setNatFilter('uav',this)" id="nf-uav">✈️ כלי טיס</button>
-          <button class="htab" onclick="setNatFilter('other',this)" id="nf-other">⚠️ אחר</button>
-        </div>
-      </div>
-
-      <div id="nat-list" style="padding:0 16px 16px;display:flex;flex-direction:column;gap:8px">
-        <div class="empty">⏳<br>טוען נתונים...</div>
-      </div>
-    </div>
-
-    <!-- ── HISTORY PAGE ── -->
-    <div class="page" id="page-history">
-      <div class="page-title">📋 &nbsp;היסטוריית התרעות</div>
-      <div class="tab-bar">
-        <button class="htab on" onclick="setHistTab('24h',this)">24 שעות</button>
-        <button class="htab" onclick="setHistTab('48h',this)">48 שעות</button>
-        <button class="htab" onclick="setHistTab('all',this)">הכל</button>
-      </div>
-      <div id="hist-list"><div class="empty">⏳<br>טוען היסטוריה...</div></div>
-    </div>
-
-    <!-- ── AI PAGE ── -->
-    <div class="page" id="page-ai">
-      <div style="padding:16px;display:flex;flex-direction:column;gap:14px;min-height:100%">
-
-        <div class="page-title">🧠 &nbsp;ניתוח Claude AI</div>
-
-        <!-- API Key -->
-        <div style="background:var(--panel);border:1px solid var(--border);border-radius:var(--r);padding:16px">
-          <div style="font-family:var(--raj);font-size:10px;font-weight:700;letter-spacing:2.5px;color:var(--text3);margin-bottom:12px">ANTHROPIC API KEY</div>
-          <div style="display:flex;gap:8px">
-            <input id="api-inp" type="password" placeholder="sk-ant-api03-..."
-              autocomplete="off" oninput="onKeyInput()"
-              style="flex:1;min-width:0;background:rgba(0,0,0,.4);
-                border:1px solid var(--border-hi);border-radius:10px;
-                color:var(--text);font-family:var(--mono);font-size:11px;
-                padding:11px 12px;outline:none;-webkit-appearance:none;
-                direction:ltr;text-align:left">
-            <button onclick="saveKey()" style="
-              flex-shrink:0;background:rgba(0,229,160,.1);
-              border:1px solid rgba(0,229,160,.25);border-radius:10px;
-              color:var(--live);font-family:var(--heb);font-size:14px;
-              font-weight:700;padding:0 18px;cursor:pointer">שמור</button>
-          </div>
-          <div id="ai-status" style="font-size:12px;color:var(--text3);margin-top:8px"></div>
-        </div>
-
-        <!-- Analyze btn -->
-        <button id="ai-analyze-btn" onclick="runAnalysis()" disabled style="
-          background:linear-gradient(135deg,rgba(0,229,160,.14),rgba(0,229,160,.04));
-          border:1px solid rgba(0,229,160,.3);border-radius:14px;
-          color:var(--live);font-family:var(--heb);font-size:16px;font-weight:700;
-          padding:16px;cursor:pointer;width:100%;
-          opacity:.4;transition:opacity .2s">
-          🧠 נתח מצב ביטחוני עכשווי
-        </button>
-
-        <!-- Response -->
-        <div style="background:var(--panel);border:1px solid var(--border);
-          border-radius:var(--r);padding:18px;flex:1">
-          <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:14px">
-            <div style="font-family:var(--raj);font-size:10px;font-weight:700;
-              letter-spacing:2.5px;color:var(--text3)">ANALYSIS OUTPUT</div>
-            <div id="ai-live-dot" style="width:7px;height:7px;border-radius:50%;
-              background:var(--text3);transition:background .3s"></div>
-          </div>
-          <div id="ai-response" style="font-size:14px;color:var(--text3);
-            line-height:1.85;direction:rtl;min-height:120px">
-            הזן מפתח Anthropic API ← לחץ נתח
-          </div>
-        </div>
-
-        <!-- Info -->
-        <div style="background:rgba(0,229,160,.04);border:1px solid rgba(0,229,160,.1);
-          border-radius:12px;padding:12px 16px;font-size:11px;color:var(--text3);
-          line-height:1.9;direction:rtl">
-          <strong style="color:var(--text2)">נשלח ל-Claude:</strong> מצב התרעות כעת · 20 התרעות אחרונות · שעה · עיר שלך<br>
-          <strong style="color:var(--text2)">Model:</strong> claude-haiku-4-5 · מהיר וחסכוני
-        </div>
-
-      </div>
-    </div>
-
-    <!-- ── SETTINGS PAGE ── -->
-    <div class="page" id="page-settings">
-      <div class="page-title">⚙️ &nbsp;הגדרות</div>
-
-      <div class="s-card">
-        <div class="s-item">
-          <div class="s-left">
-            <div class="s-ico" style="background:rgba(255,149,0,.08)">🔊</div>
-            <div>
-              <div class="s-title">צליל התרעה</div>
-              <div class="s-sub">הפעל צליל בהתרעה</div>
-            </div>
-          </div>
-          <label class="tog"><input type="checkbox" id="snd-tog" checked onchange="saveCfg()"><div class="tog-track"></div></label>
-        </div>
-
-        <!-- Sound type selector -->
-        <div class="s-item" style="flex-direction:column;align-items:flex-start;gap:10px">
-          <div class="s-left">
-            <div class="s-ico" style="background:rgba(255,149,0,.08)">🎵</div>
-            <div>
-              <div class="s-title">סוג צליל</div>
-              <div class="s-sub" id="snd-type-label">סירנה</div>
-            </div>
-          </div>
-          <div style="display:grid;grid-template-columns:repeat(2,1fr);gap:7px;width:100%;padding-right:48px">
-            <button class="snd-type-btn on" data-type="siren" onclick="setSoundType('siren',this)">🚨 סירנה</button>
-            <button class="snd-type-btn" data-type="beep" onclick="setSoundType('beep',this)">📳 ביפ</button>
-            <button class="snd-type-btn" data-type="alarm" onclick="setSoundType('alarm',this)">🔔 אזעקה</button>
-            <button class="snd-type-btn" data-type="pulse" onclick="setSoundType('pulse',this)">💓 פולס</button>
-          </div>
-        </div>
-
-        <!-- Volume -->
-        <div class="s-item" style="flex-direction:column;align-items:flex-start;gap:10px">
-          <div class="s-left">
-            <div class="s-ico" style="background:rgba(255,149,0,.08)" id="vol-ico">🔉</div>
-            <div>
-              <div class="s-title">עוצמת קול</div>
-              <div class="s-sub" id="vol-label">80%</div>
-            </div>
-          </div>
-          <div style="display:flex;align-items:center;gap:10px;width:100%;padding-right:48px">
-            <button onclick="adjVol(-10)" style="
-              width:36px;height:36px;border-radius:50%;
-              background:var(--surface);border:1px solid var(--border);
-              color:var(--text2);font-size:18px;cursor:pointer;flex-shrink:0">−</button>
-            <div style="flex:1;height:6px;background:var(--surface);border-radius:3px;overflow:hidden;position:relative">
-              <div id="vol-bar" style="height:100%;width:80%;background:linear-gradient(90deg,var(--live),var(--cyan));border-radius:3px;transition:width .2s"></div>
-            </div>
-            <button onclick="adjVol(10)" style="
-              width:36px;height:36px;border-radius:50%;
-              background:var(--surface);border:1px solid var(--border);
-              color:var(--text2);font-size:18px;cursor:pointer;flex-shrink:0">+</button>
-            <button onclick="testSound()" style="
-              background:rgba(255,149,0,.1);border:1px solid rgba(255,149,0,.25);
-              border-radius:10px;color:#ff9500;font-family:var(--heb);font-size:13px;
-              font-weight:700;padding:8px 14px;cursor:pointer;white-space:nowrap;flex-shrink:0">▶ בדוק</button>
-          </div>
-        </div>
-        <div class="s-item">
-          <div class="s-left">
-            <div class="s-ico" style="background:rgba(0,200,255,.08)">🔔</div>
-            <div>
-              <div class="s-title">התראות קופצות</div>
-              <div class="s-sub" id="ntf-sub">לחץ להפעלה</div>
-            </div>
-          </div>
-          <label class="tog"><input type="checkbox" id="ntf-tog" onchange="toggleNotif()"><div class="tog-track"></div></label>
-        </div>
-        <div class="s-item">
-          <div class="s-left">
-            <div class="s-ico" style="background:rgba(0,229,160,.08)">⏱️</div>
-            <div>
-              <div class="s-title">תדירות בדיקה</div>
-              <div class="s-sub">polling לקבצי נתונים</div>
-            </div>
-          </div>
-          <select class="s-sel" id="iv-sel" onchange="saveCfg();startPoll()">
-            <option value="5000">5 שנ'</option>
-            <option value="10000" selected>10 שנ'</option>
-            <option value="30000">30 שנ'</option>
-          </select>
-        </div>
-      </div>
-
-      <!-- DATA SOURCE CARD -->
-      <div class="s-card">
-        <div class="s-item" style="flex-direction:column;align-items:flex-start;gap:12px">
-          <div class="s-left" style="width:100%;justify-content:space-between">
-            <div style="display:flex;align-items:center;gap:12px">
-              <div class="s-ico" style="background:rgba(0,229,160,.08)">⚡</div>
-              <div>
-                <div class="s-title">מקור נתונים</div>
-                <div class="s-sub">GitHub Actions → alerts.json</div>
-              </div>
-            </div>
-            <div id="data-live-dot" style="
-              width:10px;height:10px;border-radius:50%;
-              background:var(--text3);flex-shrink:0;
-              transition:background .3s;margin-left:4px"></div>
-          </div>
-          <!-- Live data status box -->
-          <div style="width:100%;background:rgba(0,0,0,.25);border-radius:10px;padding:12px 14px;
-            border:1px solid var(--border);font-family:var(--mono);font-size:11px;line-height:2">
-            <div style="display:flex;justify-content:space-between">
-              <span style="color:var(--text3)">עדכון אחרון מ-GitHub:</span>
-              <span id="di-github" style="color:var(--text2)">—</span>
-            </div>
-            <div style="display:flex;justify-content:space-between">
-              <span style="color:var(--text3)">בדיקה אחרונה:</span>
-              <span id="di-last" style="color:var(--text2)">—</span>
-            </div>
-            <div style="display:flex;justify-content:space-between">
-              <span style="color:var(--text3)">סטטוס:</span>
-              <span id="di-status" style="color:var(--live)">—</span>
-            </div>
-          </div>
-        </div>
-        <div style="padding:0 16px 14px">
-          <button class="action-btn" onclick="testConn()">בדוק חיבור</button>
-          <div id="test-btn-res" style="margin-top:8px;text-align:center;font-size:12px;color:var(--text3)"></div>
-        </div>
-      </div>
-
-      <div class="s-card" style="padding:16px 18px">
-        <div class="card-title">📱 הוסף למסך הבית (iOS)</div>
-        <div style="font-size:12px;color:var(--text2);line-height:1.8">
-          Safari ← לחץ <strong>שיתוף</strong> ↑ ← <strong>"הוסף למסך הבית"</strong> ← הוסף<br>
-          האפליקציה תפתח ב-full screen כמו אפליקציה נייטיב.
-        </div>
-      </div>
-
-      <div style="text-align:center;font-family:var(--mono);font-size:10px;color:var(--text3);padding:8px">
-        MAGEN v2.0 · GitHub Actions · מגן by Claude
-      </div>
+<!-- HOME / RADAR -->
+<div class="page on" id="page-home">
+  <div id="orb-wrap">
+    <div class="ring" id="r1"></div>
+    <div class="ring" id="r2"></div>
+    <div class="ring" id="r3"></div>
+    <div id="orb">
+      <div id="orb-ic">✅</div>
+      <div id="orb-lb">CLEAR</div>
+      <div id="orb-ct" style="display:none"></div>
     </div>
   </div>
 
-  <!-- BOTTOM NAV -->
-  <nav id="nav">
-    <button class="nav-btn on" id="nb-radar" onclick="setPage('radar',this)">
-      <div class="nav-icon">📡</div>
-      <div class="nav-lbl">RADAR</div>
-      <div class="nav-badge" id="nb-badge"></div>
-    </button>
-    <button class="nav-btn" id="nb-national" onclick="setPage('national',this)">
-      <div class="nav-icon">🗺️</div>
-      <div class="nav-lbl">ארצי</div>
-      <div class="nav-badge" id="nb-nat-badge"></div>
-    </button>
-    <button class="nav-btn" id="nb-hist" onclick="setPage('history',this)">
-      <div class="nav-icon">📋</div>
-      <div class="nav-lbl">FEED</div>
-    </button>
-    <button class="nav-btn" id="nb-ai" onclick="setPage('ai',this)">
-      <div class="nav-icon">🧠</div>
-      <div class="nav-lbl">AI</div>
-    </button>
-    <button class="nav-btn" id="nb-cfg" onclick="setPage('settings',this)">
-      <div class="nav-icon">⚙️</div>
-      <div class="nav-lbl">CONFIG</div>
-    </button>
-  </nav>
+  <div id="ticker">טוען...</div>
+
+  <div id="al-banner">
+    <div id="al-type"><div id="al-ic">🚀</div><div id="al-title">ירי רקטות</div></div>
+    <div id="al-cities"></div>
+    <div id="al-shelter">
+      <div id="sh-cd">--</div>
+      <div id="sh-lb">שניות למרחב המוגן<br><span id="sh-city" style="font-size:10px;color:var(--text3)"></span></div>
+    </div>
+  </div>
+
+  <div id="stats">
+    <div class="sc"><div class="sn" id="st-a">0</div><div class="sl">התרעות היום</div></div>
+    <div class="sc"><div class="sn" id="st-c">0</div><div class="sl">יישובים</div></div>
+    <div class="sc"><div class="sn" id="st-q">--</div><div class="sl">שעות שקט</div></div>
+  </div>
+
+  <!-- WATCH CARD -->
+  <div id="wcard">
+    <div class="wcard-hdr">
+      <span class="wcard-hdr-t">📌 אזורים למעקב</span>
+      <span class="wcard-hdr-s">התרעה תופיע גם עבורם</span>
+    </div>
+
+    <div id="gps-row">
+      <div id="gps-ico">📍</div>
+      <div style="flex:1;min-width:0">
+        <div id="gps-city">מיקום לא ידוע</div>
+        <div id="gps-sub">לחץ לזיהוי GPS</div>
+      </div>
+      <button id="gps-btn" onclick="doGps()">זהה GPS</button>
+    </div>
+
+    <div id="wlist"></div>
+
+    <!-- ADD CITY ROW -->
+    <div style="padding:10px 14px 13px;border-top:1px solid var(--border)">
+      <div style="font-size:10px;color:var(--text3);margin-bottom:7px">➕ הוסף יישוב להתרעה:</div>
+      <div id="wadd">
+        <input id="winp" type="text" placeholder="שם עיר / יישוב..." list="cdl"
+          onkeydown="if(event.key==='Enter'){addArea();event.preventDefault()}">
+        <button id="wadd-btn" onclick="addArea()">+ הוסף</button>
+      </div>
+    </div>
+
+    <datalist id="cdl">
+      <option value="תל אביב"><option value="ירושלים"><option value="חיפה">
+      <option value="באר שבע"><option value="אשדוד"><option value="אשקלון">
+      <option value="רחובות"><option value="פתח תקווה"><option value="נתניה">
+      <option value="ראשון לציון"><option value="הרצליה"><option value="רעננה">
+      <option value="כפר סבא"><option value="רמת גן"><option value="חולון">
+      <option value="בת ים"><option value="בני ברק"><option value="מודיעין">
+      <option value="עכו"><option value="נהריה"><option value="טבריה">
+      <option value="צפת"><option value="קריית שמונה"><option value="נצרת">
+      <option value="אילת"><option value="דימונה"><option value="אופקים">
+      <option value="נתיבות"><option value="שדרות"><option value="סדרות">
+      <option value="יבנה"><option value="קריית גת"><option value="בית שמש">
+      <option value="חדרה"><option value="עפולה"><option value="עומר">
+      <option value="נחל עוז"><option value="כפר עזה"><option value="בארי">
+      <option value="ניר עוז"><option value="רעים"><option value="נירים">
+      <option value="יד מרדכי"><option value="גן יבנה"><option value="זיקים">
+    </datalist>
+  </div>
+</div>
+
+<!-- NATIONAL -->
+<div class="page" id="page-nat">
+  <div class="pg-title">🗺️ אזעקות ארציות</div>
+  <div style="font-size:11px;color:var(--text3);margin-bottom:12px">
+    התרעות <strong style="color:var(--amber)">מחוץ לאזור שלך</strong> — למידע בלבד
+  </div>
+  <div id="nat-strip">
+    <div style="display:flex;align-items:center;gap:7px;margin-bottom:8px">
+      <div style="width:7px;height:7px;border-radius:50%;background:var(--amber);
+        box-shadow:0 0 7px var(--amber);animation:blink .6s infinite"></div>
+      <span style="font-family:var(--raj);font-size:12px;font-weight:700;
+        letter-spacing:1.5px;color:var(--amber)">LIVE — אזעקה פעילה באזורים אחרים</span>
+    </div>
+    <div id="nat-type" style="font-size:15px;font-weight:700;margin-bottom:7px"></div>
+    <div id="nat-cities" style="display:flex;flex-wrap:wrap;gap:5px"></div>
+  </div>
+  <div class="tabs">
+    <button class="tab on" onclick="setNF('all',this)">הכל</button>
+    <button class="tab" onclick="setNF('mis',this)">🚀 רקטות</button>
+    <button class="tab" onclick="setNF('uav',this)">✈️ כלי טיס</button>
+    <button class="tab" onclick="setNF('oth',this)">⚠️ אחר</button>
+  </div>
+  <div id="nlist"><div class="empty">⏳<br>טוען...</div></div>
+</div>
+
+<!-- HISTORY -->
+<div class="page" id="page-hist">
+  <div class="pg-title">📋 היסטוריית התרעות</div>
+  <div class="tabs">
+    <button class="tab on" onclick="setHF('24h',this)">24 שעות</button>
+    <button class="tab" onclick="setHF('48h',this)">48 שעות</button>
+    <button class="tab" onclick="setHF('all',this)">הכל</button>
+  </div>
+  <div id="hlist"><div class="empty">⏳<br>טוען...</div></div>
+</div>
+
+<!-- AI -->
+<div class="page" id="page-ai">
+  <div class="pg-title">🧠 ניתוח Claude AI</div>
+
+  <div class="card card-p">
+    <div style="font-family:var(--raj);font-size:10px;font-weight:700;letter-spacing:2.5px;color:var(--text3);margin-bottom:10px">ANTHROPIC API KEY</div>
+    <div style="display:flex;gap:7px">
+      <input id="ai-inp" type="password" placeholder="sk-ant-api03-..." autocomplete="off" oninput="aiInp()">
+      <button onclick="saveKey()" style="flex-shrink:0;background:rgba(0,229,160,.09);
+        border:1px solid rgba(0,229,160,.22);border-radius:9px;color:var(--live);
+        font-family:var(--heb);font-size:14px;font-weight:700;padding:0 16px;cursor:pointer">שמור</button>
+    </div>
+    <div id="ai-st"></div>
+  </div>
+
+  <button id="ai-btn" onclick="doAi()" disabled>🧠 נתח מצב ביטחוני עכשווי</button>
+
+  <div class="card card-p">
+    <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:12px">
+      <div style="font-family:var(--raj);font-size:10px;font-weight:700;letter-spacing:2.5px;color:var(--text3)">ANALYSIS</div>
+      <div id="ai-dot" style="width:7px;height:7px;border-radius:50%;background:var(--text3)"></div>
+    </div>
+    <div id="ai-out">הזן מפתח API ← לחץ נתח</div>
+  </div>
+
+  <div style="background:rgba(0,229,160,.03);border:1px solid rgba(0,229,160,.09);
+    border-radius:11px;padding:11px 14px;font-size:11px;color:var(--text3);line-height:1.9">
+    <strong style="color:var(--text2)">נשלח:</strong> התרעות נוכחיות · 20 היסטוריה · שעה · עיר שלך<br>
+    <strong style="color:var(--text2)">Model:</strong> claude-haiku-4-5 · מהיר וחסכוני
+  </div>
+</div>
+
+<!-- SETTINGS -->
+<div class="page" id="page-cfg">
+  <div class="pg-title">⚙️ הגדרות</div>
+
+  <div class="card">
+    <div class="row">
+      <div class="row-l">
+        <div class="row-ico" style="background:rgba(255,149,0,.08)">🔊</div>
+        <div><div class="row-t">צליל התרעה</div><div class="row-s">סירנה בהתרעה פעילה</div></div>
+      </div>
+      <label class="tog"><input type="checkbox" id="snd" checked onchange="saveCfg()"><div class="tog-tr"></div></label>
+    </div>
+    <div class="row" style="flex-direction:column;align-items:flex-start;gap:10px">
+      <div class="row-l">
+        <div class="row-ico" style="background:rgba(255,149,0,.08)">🔈</div>
+        <div><div class="row-t">עוצמת קול</div><div class="row-s" id="vol-lbl">80%</div></div>
+      </div>
+      <div style="display:flex;align-items:center;gap:10px;width:100%;padding-right:44px">
+        <input type="range" id="vol" min="0" max="100" value="80"
+          oninput="document.getElementById('vol-lbl').textContent=this.value+'%'"
+          onchange="saveCfg()">
+        <button onclick="testSnd()" style="flex-shrink:0;background:rgba(255,149,0,.09);
+          border:1px solid rgba(255,149,0,.22);border-radius:7px;color:var(--amber);
+          font-family:var(--heb);font-size:12px;font-weight:700;padding:6px 12px;cursor:pointer">▶ בדוק</button>
+      </div>
+    </div>
+    <div class="row">
+      <div class="row-l">
+        <div class="row-ico" style="background:rgba(0,200,255,.08)">🔔</div>
+        <div><div class="row-t">התראות קופצות</div><div class="row-s" id="ntf-s">לחץ להפעלה</div></div>
+      </div>
+      <label class="tog"><input type="checkbox" id="ntf" onchange="togNtf()"><div class="tog-tr"></div></label>
+    </div>
+    <div class="row">
+      <div class="row-l">
+        <div class="row-ico" style="background:rgba(0,229,160,.08)">⏱️</div>
+        <div><div class="row-t">תדירות בדיקה</div><div class="row-s">polling</div></div>
+      </div>
+      <select class="sel" id="iv" onchange="saveCfg();startPoll()">
+        <option value="5000">5 שנ'</option>
+        <option value="10000" selected>10 שנ'</option>
+        <option value="30000">30 שנ'</option>
+      </select>
+    </div>
+  </div>
+
+  <div class="card">
+    <div class="row" style="flex-direction:column;align-items:flex-start;gap:10px">
+      <div class="row-l">
+        <div class="row-ico" style="background:rgba(0,229,160,.08)">⚡</div>
+        <div><div class="row-t">מקור נתונים</div><div class="row-s">GitHub Actions</div></div>
+      </div>
+      <div style="width:100%;background:rgba(0,0,0,.2);border-radius:9px;
+        padding:10px 12px;font-family:var(--mono);font-size:10px;line-height:2;
+        border:1px solid var(--border)">
+        <div style="display:flex;justify-content:space-between">
+          <span style="color:var(--text3)">עדכון GitHub:</span>
+          <span id="di-gh" style="color:var(--text2)">—</span>
+        </div>
+        <div style="display:flex;justify-content:space-between">
+          <span style="color:var(--text3)">בדיקה אחרונה:</span>
+          <span id="di-last" style="color:var(--text2)">—</span>
+        </div>
+        <div style="display:flex;justify-content:space-between">
+          <span style="color:var(--text3)">סטטוס:</span>
+          <span id="di-st" style="color:var(--live)">—</span>
+        </div>
+      </div>
+    </div>
+    <div style="padding:0 14px 12px">
+      <button class="big-btn" onclick="testConn()" id="test-btn">בדוק חיבור</button>
+      <div id="test-res" style="text-align:center;font-size:11px;color:var(--text3);margin-top:7px"></div>
+    </div>
+  </div>
+
+  <div class="card card-p" style="font-size:12px;color:var(--text2);line-height:1.85">
+    <div style="font-family:var(--raj);font-size:10px;font-weight:700;letter-spacing:2px;
+      color:var(--text3);margin-bottom:9px">📱 הוסף למסך הבית (iOS)</div>
+    Safari ← שיתוף ↑ ← <strong>"הוסף למסך הבית"</strong> ← הוסף
+  </div>
+
+  <div style="text-align:center;font-family:var(--mono);font-size:9px;color:var(--text3);padding:4px">
+    MAGEN v2.1 · GitHub Actions · dudutal-dev
+  </div>
+</div>
+
+</div><!-- end #main -->
+
+<!-- NAV -->
+<nav id="nav">
+  <button class="nb on" onclick="goPage('home',this)"><div class="ni">📡</div><div class="nl">RADAR</div><div class="nbadge" id="b-al"></div></button>
+  <button class="nb" onclick="goPage('nat',this)"><div class="ni">🗺️</div><div class="nl">ארצי</div><div class="nbadge" id="b-nat"></div></button>
+  <button class="nb" onclick="goPage('hist',this)"><div class="ni">📋</div><div class="nl">FEED</div></button>
+  <button class="nb" onclick="goPage('ai',this)"><div class="ni">🧠</div><div class="nl">AI</div></button>
+  <button class="nb" onclick="goPage('cfg',this)"><div class="ni">⚙️</div><div class="nl">CONFIG</div></button>
+</nav>
+
+</div><!-- end #app -->
+
+<!-- OVERLAY -->
+<div id="ov">
+  <div id="ov-threat">● ● ● התרעה פעילה ● ● ●</div>
+  <div id="ov-ic">🚨</div>
+  <div id="ov-title">ירי רקטות וטילים</div>
+  <div id="ov-ring">
+    <svg id="ov-svg" viewBox="0 0 120 120">
+      <circle id="ov-bg" cx="60" cy="60" r="52"/>
+      <circle id="ov-circ" cx="60" cy="60" r="52"/>
+    </svg>
+    <div id="ov-cd"><div id="ov-s">90</div><div id="ov-sl">שניות</div></div>
+  </div>
+  <div id="ov-cities"></div>
+  <button id="ov-ok" onclick="closeOv()">הבנתי — כנסו למרחב המוגן</button>
 </div>
 
 <script>
-/* ══════════════════════════════════════════════════════
-   BACKGROUND CANVAS — topology dot grid
-══════════════════════════════════════════════════════ */
-(function(){
-  const c=document.getElementById('bg-canvas');
-  const ctx=c.getContext('2d');
-  function resize(){ c.width=window.innerWidth; c.height=window.innerHeight; draw(); }
-  function draw(){
-    ctx.clearRect(0,0,c.width,c.height);
-    const s=40, cols=Math.ceil(c.width/s)+1, rows=Math.ceil(c.height/s)+1;
-    ctx.strokeStyle='rgba(0,229,160,0.06)';
-    ctx.lineWidth=.5;
-    for(let x=0;x<cols;x++){
-      for(let y=0;y<rows;y++){
-        if(Math.random()>.4) continue;
-        const nx=x+1,ny=y;
-        if(nx<cols){ ctx.beginPath();ctx.moveTo(x*s,y*s);ctx.lineTo(nx*s,ny*s);ctx.stroke(); }
-        const nx2=x,ny2=y+1;
-        if(ny2<rows){ ctx.beginPath();ctx.moveTo(x*s,y*s);ctx.lineTo(nx2*s,ny2*s);ctx.stroke(); }
-      }
-    }
-    ctx.fillStyle='rgba(0,229,160,0.15)';
-    for(let x=0;x<cols;x++)for(let y=0;y<rows;y++){
-      ctx.beginPath();ctx.arc(x*s,y*s,1.2,0,Math.PI*2);ctx.fill();
-    }
-  }
-  window.addEventListener('resize',resize);
-  resize();
-})();
-
-/* ══════════════════════════════════════════════════════
-   THREAT TYPES
-══════════════════════════════════════════════════════ */
-const TYPES = {
-  '1': { n:'ירי רקטות וטילים', ic:'🚀', col:'#ff1a3a', shelter:90 },
-  '2': { n:'חדירת כלי טיס עוין', ic:'✈️', col:'#ff1a3a', shelter:60 },
-  '3': { n:'רעידת אדמה',        ic:'🌊', col:'#ff9500', shelter:0  },
-  '4': { n:'חומרים מסוכנים',   ic:'☣️', col:'#ff9500', shelter:120},
-  '5': { n:'טיל בליסטי',        ic:'💥', col:'#ff1a3a', shelter:180},
-  '6': { n:'צונאמי',            ic:'🌊', col:'#00c8ff', shelter:300},
-  '7': { n:'חדירת מחבלים',     ic:'⚠️', col:'#ff9500', shelter:0  },
+/* ===== TYPES ===== */
+const T={
+  '1':{n:'ירי רקטות וטילים',ic:'🚀',c:'#ff1a3a',s:90},
+  '2':{n:'חדירת כלי טיס עוין',ic:'✈️',c:'#ff1a3a',s:60},
+  '3':{n:'רעידת אדמה',ic:'🌊',c:'#ff9500',s:0},
+  '4':{n:'חומרים מסוכנים',ic:'☣️',c:'#ff9500',s:120},
+  '5':{n:'טיל בליסטי',ic:'💥',c:'#ff1a3a',s:180},
+  '6':{n:'צונאמי',ic:'🌊',c:'#00c8ff',s:300},
+  '7':{n:'חדירת מחבלים',ic:'⚠️',c:'#ff9500',s:0}
 };
 
-/* ══════════════════════════════════════════════════════
-   STATE
-══════════════════════════════════════════════════════ */
-let hist=[], myCity=null, myShelter=90, liveAlerts=[], histTab='24h';
-let pollTimer=null, cdTimer=null, cdSecs=0;
-let lastAlertHash='';
-let watchAreas = []; // additional manual areas
+/* ===== STATE ===== */
+let hist=[],myCity=null,areas=[],liveHash='',liveData=null;
+let histF='24h',natF='all',pollT=null,cdT=null,ovT=null,ovSecs=0,ovMax=90;
 
-/* ══════════════════════════════════════════════════════
-   WATCH AREAS
-══════════════════════════════════════════════════════ */
-function loadWatchAreas(){
-  try{
-    const saved = localStorage.getItem('mg3_areas');
-    watchAreas = saved ? JSON.parse(saved) : [];
-  }catch(e){ watchAreas=[]; }
-  renderWatchList();
-}
-
-function saveWatchAreas(){
-  try{ localStorage.setItem('mg3_areas', JSON.stringify(watchAreas)); }catch(e){}
-}
-
-function addWatchArea(){
-  const inp = document.getElementById('area-inp');
-  const val = (inp.value||'').trim();
-  if(!val) return;
-  if(watchAreas.includes(val)){ inp.value=''; return; }
-  watchAreas.push(val);
-  saveWatchAreas();
-  renderWatchList();
-  inp.value='';
-}
-
-function removeWatchArea(i){
-  watchAreas.splice(i,1);
-  saveWatchAreas();
-  renderWatchList();
-}
-
-function renderWatchList(){
-  const el = document.getElementById('watch-list');
-  if(!watchAreas.length){ el.style.display='none'; return; }
-  el.style.display='flex';
-  el.innerHTML = watchAreas.map((a,i)=>`
-    <div style="display:inline-flex;align-items:center;gap:5px;
-      background:rgba(0,229,160,.08);border:1px solid rgba(0,229,160,.2);
-      border-radius:20px;padding:5px 8px 5px 12px;
-      font-size:12px;font-family:var(--heb);white-space:nowrap">
-      <span style="color:var(--live)">📌 ${a}</span>
-      <button onclick="removeWatchArea(${i})" style="
-        background:none;border:none;color:var(--text3);font-size:16px;line-height:1;
-        cursor:pointer;padding:0 2px;margin-right:2px" title="הסר">×</button>
-    </div>`).join('');
-}
-
-function isMyArea(city){
-  if(!city) return false;
-  const areas = [myCity, ...watchAreas].filter(Boolean);
-  return areas.some(a => city===a || city.includes(a) || a.includes(city));
-}
-
-/* ══════════════════════════════════════════════════════
-   NAV
-══════════════════════════════════════════════════════ */
-function setPage(id, btn){
-  document.querySelectorAll('.page').forEach(p=>p.classList.remove('active'));
-  document.querySelectorAll('.nav-btn').forEach(b=>b.classList.remove('on'));
-  document.getElementById('page-'+id).classList.add('active');
+/* ===== NAV ===== */
+function goPage(id,btn){
+  document.querySelectorAll('.page').forEach(p=>p.classList.remove('on'));
+  document.querySelectorAll('.nb').forEach(b=>b.classList.remove('on'));
+  document.getElementById('page-'+id).classList.add('on');
   btn.classList.add('on');
-  if(id==='radar') document.getElementById('nb-badge').classList.remove('show');
+  if(id==='home') document.getElementById('b-al').classList.remove('on');
+  if(id==='nat')  renderNat();
+  if(id==='hist') renderHist();
 }
 
-/* ══════════════════════════════════════════════════════
-   STATUS BAR
-══════════════════════════════════════════════════════ */
-function setStatus(state, text){
-  const dot=document.getElementById('sdot');
-  const txt=document.getElementById('stext');
-  const pill=document.getElementById('status-pill');
-  dot.className='sdot '+state;
-  txt.textContent=text;
-  pill.className='status-pill'+(state==='alert'?' alert':state==='live'?' live':'');
+/* ===== STATUS ===== */
+function setSt(s,t){
+  const d=document.getElementById('dot');
+  d.className='dot '+s;
+  document.getElementById('stxt').textContent=t;
 }
 
-/* ══════════════════════════════════════════════════════
-   POLLING — reads local JSON files
-══════════════════════════════════════════════════════ */
-const POLL_MS = ()=>parseInt(document.getElementById('iv-sel')?.value||10000);
-
-async function fetchLocal(path){
+/* ===== FETCH ===== */
+async function getJson(path){
   const r=await fetch(path+'?_='+Date.now(),{cache:'no-store'});
   if(!r.ok) throw new Error('HTTP '+r.status);
   return r.json();
 }
 
+/* ===== POLL ===== */
 async function poll(){
   try{
-    const [alertData, meta] = await Promise.allSettled([
-      fetchLocal('alerts.json'),
-      fetchLocal('meta.json')
-    ]);
+    const [aRes,mRes]=await Promise.allSettled([getJson('alerts.json'),getJson('meta.json')]);
+    const now=new Date();
+    const meta=mRes.status==='fulfilled'?mRes.value:null;
+    const ghTime=meta?.updated?new Date(meta.updated).toLocaleTimeString('he-IL',{hour:'2-digit',minute:'2-digit'}):'—';
 
-    const now = new Date();
-    const metaVal = meta.status==='fulfilled' ? meta.value : null;
-    const updAt = metaVal?.updated
-      ? new Date(metaVal.updated).toLocaleTimeString('he-IL',{hour:'2-digit',minute:'2-digit'})
-      : '--:--';
+    setSt('on','LIVE');
+    document.getElementById('ticker').textContent=
+      now.toLocaleTimeString('he-IL',{hour:'2-digit',minute:'2-digit',second:'2-digit'})+' · GitHub: '+ghTime;
+    document.getElementById('di-gh').textContent=ghTime;
+    document.getElementById('di-last').textContent=now.toLocaleTimeString('he-IL');
+    document.getElementById('di-st').textContent='✅ מחובר';
+    document.getElementById('di-st').style.color='var(--live)';
 
-    document.getElementById('ticker').textContent =
-      now.toLocaleTimeString('he-IL',{hour:'2-digit',minute:'2-digit',second:'2-digit'}) +
-      '  ·  נתוני GitHub: ' + updAt;
-
-    setStatus('live','LIVE');
-    updateDataIndicator(true, updAt);
-
-    if(alertData.status==='fulfilled'){
-      const d = alertData.value;
-      updateNationalLiveStrip(d);
-      if(d && d.data && d.data.length > 0){
-        const hash = JSON.stringify(d.data)+d.cat;
-        if(hash !== lastAlertHash){ lastAlertHash=hash; triggerAlert(d); }
-      } else {
-        lastAlertHash='';
-        clearAlert();
-      }
+    if(aRes.status==='fulfilled'){
+      const d=aRes.value;
+      updateNatStrip(d);
+      if(d&&d.data&&d.data.length){
+        const h=JSON.stringify(d.data)+d.cat;
+        if(h!==liveHash){liveHash=h;liveData=d;triggerAlert(d);}
+      } else {liveHash='';liveData=null;clearAlert();}
     }
-
-    // Update conn info
-    const ci=document.getElementById('conn-info');
-    if(ci) ci.textContent='עדכון אחרון: '+now.toLocaleTimeString('he-IL')+'  ·  GitHub Actions';
-
   }catch(e){
-    setStatus('wait','שגיאה');
+    setSt('err','שגיאה');
     document.getElementById('ticker').textContent='⚠️ '+e.message;
-    updateDataIndicator(false, null);
+    document.getElementById('di-st').textContent='❌ '+e.message;
+    document.getElementById('di-st').style.color='var(--red)';
   }
+}
+
+async function manualRefresh(){
+  const btn=document.getElementById('refresh-btn');
+  btn.textContent='...';btn.disabled=true;
+  await poll();
+  await loadHist();
+  btn.textContent='↻ רענן';btn.disabled=false;
 }
 
 function startPoll(){
-  if(pollTimer) clearInterval(pollTimer);
+  if(pollT)clearInterval(pollT);
   poll();
-  pollTimer = setInterval(poll, POLL_MS());
+  const iv=parseInt(document.getElementById('iv').value)||10000;
+  pollT=setInterval(poll,iv);
 }
 
-/* ══════════════════════════════════════════════════════
-   ALERT TRIGGER
-══════════════════════════════════════════════════════ */
-function triggerAlert(d){
-  const cat = String(d.cat||d.category||'1');
-  const T = TYPES[cat]||TYPES['1'];
-  const cities = d.data||[];
+/* ===== ALERT ===== */
+function isMyArea(city){
+  const all=[myCity,...areas].filter(Boolean);
+  return all.some(a=>a&&city&&(city===a||city.includes(a)||a.includes(city)));
+}
 
-  liveAlerts = cities;
-  setStatus('alert','ALERT');
+function triggerAlert(d){
+  const cat=String(d.cat||d.category||'1');
+  const tp=T[cat]||T['1'];
+  const cities=d.data||[];
 
   // Orb
-  const orb=document.getElementById('orb');
-  orb.classList.add('alert');
-  document.getElementById('orb-icon').textContent=T.ic;
-  document.getElementById('orb-label').textContent='ALERT';
-  document.getElementById('orb-label').classList.add('alert');
-  document.getElementById('orb-count').style.display='block';
-  document.getElementById('orb-count').textContent=cities.length+' יישובים';
-
-  // Rings
-  ['r1','r2','r3'].forEach(r=>{
-    const el=document.getElementById(r);
-    el.classList.add('alert');
-    el.style.borderColor=T.col;
+  document.getElementById('orb').classList.add('al');
+  document.getElementById('orb-ic').textContent=tp.ic;
+  document.getElementById('orb-lb').textContent='ALERT';
+  document.getElementById('orb-lb').classList.add('al');
+  document.getElementById('orb-ct').style.display='block';
+  document.getElementById('orb-ct').textContent=cities.length+' יישובים';
+  ['r1','r2','r3'].forEach(id=>{
+    const el=document.getElementById(id);
+    el.classList.add('al');el.style.borderColor=tp.c;
   });
 
   // Banner
-  const banner=document.getElementById('alert-banner');
-  banner.classList.add('show');
-  document.getElementById('banner-icon').textContent=T.ic;
-  document.getElementById('banner-title').textContent=T.n;
-  document.getElementById('banner-title').style.color=T.col;
-  renderBannerCities(cities);
-  startShelterCountdown(T.shelter);
+  document.getElementById('al-banner').classList.add('on');
+  document.getElementById('al-ic').textContent=tp.ic;
+  document.getElementById('al-title').textContent=tp.n;
+  document.getElementById('al-title').style.color=tp.c;
+  document.getElementById('al-cities').innerHTML=
+    cities.slice(0,12).map(c=>`<div class="chip${isMyArea(c)?' me':''}">${c}</div>`).join('')+
+    (cities.length>12?`<div class="chip">+${cities.length-12}</div>`:'');
 
-  // Nav badge
-  const activePage=document.querySelector('.page.active');
-  if(!activePage||activePage.id!=='page-radar'){
-    document.getElementById('nb-badge').classList.add('show');
-  }
+  const shelter=getShelter(myCity)||tp.s;
+  startShelterCd(shelter);
+
+  // Nav badge if not on home
+  if(!document.getElementById('page-home').classList.contains('on'))
+    document.getElementById('b-al').classList.add('on');
 
   // Overlay
-  showOverlay(T, cities);
+  showOv(tp,cities);
 
-  // Sound
-  if(document.getElementById('snd-tog')?.checked) playAlertSound();
-
-  // Push
-  sendPush(T.n, cities.slice(0,5).join(', '));
+  // Sound & push
+  if(document.getElementById('snd').checked) playSound();
+  doPush(tp.n,cities.slice(0,4).join(', '));
 }
 
 function clearAlert(){
-  liveAlerts=[];
-  setStatus('live','CLEAR');
-  document.getElementById('orb').classList.remove('alert');
-  document.getElementById('orb-icon').textContent='✅';
-  document.getElementById('orb-label').textContent='CLEAR';
-  document.getElementById('orb-label').classList.remove('alert');
-  document.getElementById('orb-count').style.display='none';
-  ['r1','r2','r3'].forEach(r=>{
-    const el=document.getElementById(r);
-    el.classList.remove('alert');
-    el.style.borderColor='';
+  document.getElementById('orb').classList.remove('al');
+  document.getElementById('orb-ic').textContent='✅';
+  document.getElementById('orb-lb').textContent='CLEAR';
+  document.getElementById('orb-lb').classList.remove('al');
+  document.getElementById('orb-ct').style.display='none';
+  ['r1','r2','r3'].forEach(id=>{
+    const el=document.getElementById(id);
+    el.classList.remove('al');el.style.borderColor='';
   });
-  document.getElementById('alert-banner').classList.remove('show');
-  if(cdTimer){ clearInterval(cdTimer); cdTimer=null; }
+  document.getElementById('al-banner').classList.remove('on');
+  if(cdT){clearInterval(cdT);cdT=null;}
 }
 
-function renderBannerCities(cities){
-  const el=document.getElementById('banner-cities');
-  const shown = cities.slice(0,10);
-  el.innerHTML = shown.map(c=>{
-    const isMe = isMyArea(c);
-    return`<div class="city-chip${isMe?' user':''}">${isMe?'📍 ':''}${c}</div>`;
-  }).join('')+(cities.length>10?`<div class="city-chip">+${cities.length-10}</div>`:'');
-}
-
-/* ══════════════════════════════════════════════════════
-   SHELTER COUNTDOWN
-══════════════════════════════════════════════════════ */
-function startShelterCountdown(secs){
-  if(cdTimer) clearInterval(cdTimer);
-  const city = myCity||'';
-  const shelterSecs = getShelterTime(city)||secs;
-  cdSecs = shelterSecs;
-  document.getElementById('shelter-countdown').textContent = cdSecs;
-  document.getElementById('shelter-city').textContent = city ? 'עבור '+city : 'זמן ממוצע';
-  cdTimer = setInterval(()=>{
-    cdSecs--;
-    document.getElementById('shelter-countdown').textContent=Math.max(0,cdSecs);
-    if(cdSecs<=0) clearInterval(cdTimer);
-  },1000);
-}
-
-function getShelterTime(city){
-  // Simplified shelter times
-  const near={'תל אביב':90,'ירושלים':120,'חיפה':60,'באר שבע':30,'אשדוד':45,'אשקלון':30,'עזה':15,'סדרות':15,'נתיבות':15};
-  for(const [k,v] of Object.entries(near)){
-    if(city.includes(k)) return v;
-  }
+/* ===== SHELTER CD ===== */
+function getShelter(city){
+  if(!city)return 90;
+  const m={'ירושלים':120,'תל אביב':90,'חיפה':60,'אשדוד':45,'אשקלון':30,
+    'באר שבע':30,'נתיבות':15,'שדרות':15,'סדרות':15,'נחל עוז':10,'ספיר':10};
+  for(const[k,v]of Object.entries(m))if(city.includes(k))return v;
   return 90;
 }
-
-/* ══════════════════════════════════════════════════════
-   OVERLAY
-══════════════════════════════════════════════════════ */
-let ovTimer=null, ovSecs=0, ovMaxSecs=90;
-
-function showOverlay(T, cities){
-  const ov=document.getElementById('overlay');
-  document.getElementById('ov-icon').textContent=T.ic;
-  document.getElementById('ov-title').textContent=T.n;
-  const city=myCity||'';
-  ovMaxSecs = getShelterTime(city)||T.shelter||90;
-  ovSecs = ovMaxSecs;
-
-  // Cities
-  document.getElementById('ov-cities').innerHTML=
-    cities.slice(0,14).map(c=>{
-      const isMe=myCity&&c.includes(myCity);
-      return`<div class="ov-chip${isMe?' me':''}">${c}</div>`;
-    }).join('')+(cities.length>14?`<div class="ov-chip">+${cities.length-14}</div>`:'');
-
-  // Ring
-  const circ=document.getElementById('ov-ring-circle');
-  const perim=352;
-  circ.style.strokeDashoffset=0;
-  circ.style.stroke=T.col;
-
-  document.getElementById('ov-secs').textContent=ovSecs;
-  document.getElementById('ov-secs').style.color=T.col;
-
-  if(ovTimer) clearInterval(ovTimer);
-  ovTimer=setInterval(()=>{
-    ovSecs--;
-    document.getElementById('ov-secs').textContent=Math.max(0,ovSecs);
-    const pct=ovSecs/ovMaxSecs;
-    circ.style.strokeDashoffset=perim*(1-pct);
-    if(ovSecs<=0){ clearInterval(ovTimer); }
+function startShelterCd(secs){
+  if(cdT)clearInterval(cdT);
+  let s=secs;
+  document.getElementById('sh-cd').textContent=s;
+  document.getElementById('sh-city').textContent=myCity||'';
+  cdT=setInterval(()=>{
+    s--;document.getElementById('sh-cd').textContent=Math.max(0,s);
+    if(s<=0)clearInterval(cdT);
   },1000);
-
-  ov.classList.add('show');
 }
 
-function dismissOverlay(){
-  document.getElementById('overlay').classList.remove('show');
-  if(ovTimer){ clearInterval(ovTimer); ovTimer=null; }
+/* ===== OVERLAY ===== */
+function showOv(tp,cities){
+  document.getElementById('ov-ic').textContent=tp.ic;
+  document.getElementById('ov-title').textContent=tp.n;
+  document.getElementById('ov-title').style.color=tp.c;
+  document.getElementById('ov-circ').style.stroke=tp.c;
+  document.getElementById('ov-s').style.color=tp.c;
+  document.getElementById('ov-cities').innerHTML=
+    cities.slice(0,14).map(c=>`<div class="ov-chip${isMyArea(c)?' me':''}">${c}</div>`).join('')+
+    (cities.length>14?`<div class="ov-chip">+${cities.length-14}</div>`:'');
+  ovMax=getShelter(myCity)||tp.s||90;
+  ovSecs=ovMax;
+  document.getElementById('ov-s').textContent=ovSecs;
+  document.getElementById('ov-circ').style.strokeDashoffset=0;
+  if(ovT)clearInterval(ovT);
+  ovT=setInterval(()=>{
+    ovSecs--;
+    document.getElementById('ov-s').textContent=Math.max(0,ovSecs);
+    document.getElementById('ov-circ').style.strokeDashoffset=326*(1-ovSecs/ovMax);
+    if(ovSecs<=0)clearInterval(ovT);
+  },1000);
+  document.getElementById('ov').classList.add('on');
+}
+function closeOv(){
+  document.getElementById('ov').classList.remove('on');
+  if(ovT){clearInterval(ovT);ovT=null;}
 }
 
-/* ══════════════════════════════════════════════════════
-   HISTORY
-══════════════════════════════════════════════════════ */
-function setHistTab(t, btn){
-  histTab=t;
-  document.querySelectorAll('.htab').forEach(b=>b.classList.remove('on'));
-  btn.classList.add('on');
-  renderHist();
+/* ===== NAT STRIP ===== */
+function updateNatStrip(d){
+  const strip=document.getElementById('nat-strip');
+  if(!d||!d.data||!d.data.length){strip.style.display='none';document.getElementById('b-nat').classList.remove('on');return;}
+  const others=(d.data||[]).filter(c=>!isMyArea(c));
+  if(!others.length){strip.style.display='none';return;}
+  const tp=T[String(d.cat||'1')]||T['1'];
+  document.getElementById('nat-type').innerHTML=tp.ic+' <span style="color:'+tp.c+'">'+tp.n+'</span>';
+  document.getElementById('nat-cities').innerHTML=
+    others.slice(0,10).map(c=>`<div class="chip">${c}</div>`).join('')+
+    (others.length>10?`<div class="chip">+${others.length-10}</div>`:'');
+  strip.style.display='block';
+  document.getElementById('b-nat').classList.add('on');
 }
 
+/* ===== HISTORY ===== */
+function setHF(f,btn){
+  histF=f;
+  document.querySelectorAll('#page-hist .tab').forEach(b=>b.classList.remove('on'));
+  btn.classList.add('on');renderHist();
+}
 function renderHist(){
-  const el=document.getElementById('hist-list');
+  const el=document.getElementById('hlist');
   const now=new Date();
-  const filtered=hist.filter(h=>{
+  const f=hist.filter(h=>{
     const hr=(now-h.t)/3600000;
-    return histTab==='24h'?hr<24:histTab==='48h'?hr<48:true;
+    return histF==='24h'?hr<24:histF==='48h'?hr<48:true;
   });
-  if(!filtered.length){
-    el.innerHTML='<div class="empty">✅<br>אין התרעות בתקופה זו</div>';
-    return;
-  }
-  el.innerHTML=filtered.map(h=>{
-    const T=h.T||TYPES['1'];
-    const ts=h.t instanceof Date&&!isNaN(h.t)
-      ?h.t.toLocaleTimeString('he-IL',{hour:'2-digit',minute:'2-digit'})+' · '+
-       h.t.toLocaleDateString('he-IL',{day:'2-digit',month:'2-digit'}):'—';
-    return`<div class="h-entry">
-      <div class="h-dot-wrap"><div class="h-dot" style="color:${T.col}"></div></div>
-      <div class="h-body">
-        <div class="h-type" style="color:${T.col}">${T.ic} ${T.n}</div>
-        <div class="h-cities">${(h.cities||[]).slice(0,8).join(' · ')}${(h.cities||[]).length>8?' +'+((h.cities||[]).length-8):''}</div>
-        <div class="h-time">${ts}</div>
-      </div>
-    </div>`;
+  if(!f.length){el.innerHTML='<div class="empty">✅<br>אין התרעות בתקופה זו</div>';return;}
+  el.innerHTML=f.map(h=>{
+    const tp=h.T||T['1'];
+    const ts=h.t&&!isNaN(h.t)?
+      h.t.toLocaleTimeString('he-IL',{hour:'2-digit',minute:'2-digit'})+' · '+
+      h.t.toLocaleDateString('he-IL',{day:'2-digit',month:'2-digit'}):'—';
+    return`<div class="he">
+      <div class="he-dot" style="color:${tp.c}"></div>
+      <div style="flex:1;min-width:0">
+        <div class="he-t" style="color:${tp.c}">${tp.ic} ${tp.n}</div>
+        <div class="he-c">${(h.cities||[]).slice(0,8).join(' · ')}${(h.cities||[]).length>8?' +'+((h.cities||[]).length-8):''}</div>
+        <div class="he-ts">${ts}</div>
+      </div></div>`;
   }).join('');
 }
-
-/* ══════════════════════════════════════════════════════
-   NATIONAL ALERTS PAGE
-══════════════════════════════════════════════════════ */
-let natFilter = 'all';
-
-function setNatFilter(f, btn){
-  natFilter = f;
-  document.querySelectorAll('#page-national .htab').forEach(b=>b.classList.remove('on'));
-  btn.classList.add('on');
-  renderNational();
-}
-
-
-function filterNatByType(entries){
-  if(natFilter==='all') return entries;
-  if(natFilter==='missiles') return entries.filter(e=>e.cat==='1'||e.cat==='5');
-  if(natFilter==='uav')      return entries.filter(e=>e.cat==='2');
-  return entries.filter(e=>e.cat!=='1'&&e.cat!=='2'&&e.cat!=='5');
-}
-
-function renderNational(){
-  const el = document.getElementById('nat-list');
-  const now = new Date();
-
-  // Show history entries NOT in my city, last 24h
-  const entries = hist.filter(h=>{
-    const hr = (now - h.t) / 3600000;
-    if(hr > 24) return false;
-    // Exclude entries that are entirely in my city
-    if(!myCity) return true;
-    const cities = h.cities || [];
-    const allMine = cities.every(c => isMyArea(c));
-    return !allMine;
-  });
-
-  const filtered = filterNatByType(entries);
-
-  if(!filtered.length){
-    el.innerHTML='<div class="empty">✅<br>אין התרעות ב-24 שעות האחרונות<br><span style="font-size:11px">מחוץ לאזור שלך</span></div>';
-    return;
-  }
-
-  el.innerHTML = filtered.map(h=>{
-    const T = h.T || TYPES['1'];
-    // Split cities: mine vs others
-    const mine   = (h.cities||[]).filter(c=>isMyArea(c));
-    const others = (h.cities||[]).filter(c=>!isMyArea(c));
-    const ts = h.t instanceof Date && !isNaN(h.t)
-      ? h.t.toLocaleTimeString('he-IL',{hour:'2-digit',minute:'2-digit'})+' · '+
-        h.t.toLocaleDateString('he-IL',{day:'2-digit',month:'2-digit'})
-      : '—';
-
-    const cityHtml = [
-      ...others.slice(0,10).map(c=>`<div class="city-chip">${c}</div>`),
-      ...(mine.length?mine.map(c=>`<div class="city-chip user">📍 ${c}</div>`):[]),
-      ...(others.length>10?[`<div class="city-chip">+${others.length-10}</div>`]:[])
-    ].join('');
-
-    return `<div class="h-entry" style="border-color:rgba(255,149,0,.12)">
-      <div class="h-dot-wrap"><div class="h-dot" style="color:${T.col}"></div></div>
-      <div class="h-body">
-        <div class="h-type" style="color:${T.col}">${T.ic} ${T.n}</div>
-        <div style="display:flex;flex-wrap:wrap;gap:5px;margin:6px 0">${cityHtml}</div>
-        <div class="h-time">${ts} · ${(h.cities||[]).length} יישובים</div>
-      </div>
-    </div>`;
-  }).join('');
-}
-
-function updateNationalLiveStrip(alertData){
-  const strip = document.getElementById('nat-live-strip');
-  if(!alertData || !alertData.data || !alertData.data.length){
-    if(strip) strip.style.display='none';
-    document.getElementById('nb-nat-badge').classList.remove('show');
-    return;
-  }
-
-  const cities = alertData.data;
-  // Only show strip if there are cities NOT in my area
-  const otherCities = myCity ? cities.filter(c=>!isMyArea(c)) : cities;
-  if(!otherCities.length){ strip.style.display='none'; return; }
-
-  const T = TYPES[String(alertData.cat||'1')]||TYPES['1'];
-  strip.style.display = 'block';
-  document.getElementById('nat-live-type').innerHTML = `${T.ic} <span style="color:${T.col}">${T.n}</span>`;
-  document.getElementById('nat-live-cities').innerHTML =
-    otherCities.slice(0,12).map(c=>`<div class="city-chip">${c}</div>`).join('') +
-    (otherCities.length>12?`<div class="city-chip">+${otherCities.length-12}</div>`:'');
-
-  // Badge on nav
-  document.getElementById('nb-nat-badge').classList.add('show');
-}
-
 function computeStats(){
-  const now=new Date();
-  let total=0, cities=new Set(), last=null;
+  const now=new Date();let a=0,c=new Set(),last=null;
   hist.forEach(h=>{
-    if((now-h.t)/3600000<24){
-      total++;
-      (h.cities||[]).forEach(c=>cities.add(c));
-      if(!last||h.t>last) last=h.t;
-    }
+    if((now-h.t)/3600000<24){a++;(h.cities||[]).forEach(x=>c.add(x));if(!last||h.t>last)last=h.t;}
   });
-  document.getElementById('st-today').textContent=total;
-  document.getElementById('st-cities').textContent=cities.size;
-  document.getElementById('st-quiet').textContent=last
-    ?((now-last)/3600000).toFixed(1):'24+';
+  document.getElementById('st-a').textContent=a;
+  document.getElementById('st-c').textContent=c.size;
+  document.getElementById('st-q').textContent=last?((now-last)/3600000).toFixed(1):'24+';
 }
-
 async function loadHist(){
-  const el = document.getElementById('hist-list');
+  const el=document.getElementById('hlist');
   try{
-    const raw = await fetchLocal('history.json');
-
-    // Handle empty
-    if(!raw || (Array.isArray(raw) && !raw.length)){
-      if(el) el.innerHTML='<div class="empty">📭<br>אין היסטוריה<br><span style="font-size:11px">GitHub Actions יצבור נתונים לאט לאט</span></div>';
+    const r=await fetch('history.json?_='+Date.now(),{cache:'no-store'});
+    if(r.status===404){
+      el.innerHTML='<div class="empty">⏳<br>ממתין ל-GitHub Actions<br><span style="font-size:10px">Actions → Run workflow → המתן 30 שנ\'</span></div>';
       return;
     }
-
-    // oref returns array at top level
-    const arr = Array.isArray(raw) ? raw : (raw.data ? raw.data : []);
-    if(!arr.length) return;
-
-    hist = arr.slice(0,200).map(h=>({
-      id:     h.alertDate||h.time||Math.random(),
-      t:      new Date((h.alertDate||h.time||'').replace(' ','T')||0),
-      cat:    String(h.category||h.cat||'1'),
-      T:      TYPES[String(h.category||h.cat||'1')]||TYPES['1'],
-      cities: Array.isArray(h.data)   ? h.data :
-              typeof h.data==='string' ? h.data.split(',').map(s=>s.trim()).filter(Boolean) :
-              Array.isArray(h.cities)  ? h.cities : []
-    })).filter(h => h.cities.length > 0);
-
-    renderHist(); computeStats(); renderNational();
-
+    if(!r.ok)throw new Error('HTTP '+r.status);
+    const arr=await r.json();
+    if(!Array.isArray(arr)||!arr.length){
+      el.innerHTML='<div class="empty">📭<br>אין היסטוריה עדיין</div>';return;
+    }
+    hist=arr.slice(0,200).map(h=>({
+      id:h.alertDate||Math.random(),
+      t:new Date((h.alertDate||'').replace(' ','T')||0),
+      cat:String(h.category||'1'),
+      T:T[String(h.category||'1')]||T['1'],
+      cities:Array.isArray(h.data)?h.data:typeof h.data==='string'?h.data.split(',').map(s=>s.trim()).filter(Boolean):[]
+    })).filter(h=>h.cities.length>0);
+    renderHist();computeStats();renderNat();
   }catch(e){
-    console.warn('loadHist error:', e.message);
-    if(el) el.innerHTML=`<div class="empty">⚠️<br>שגיאה בטעינת היסטוריה<br><span style="font-size:11px;color:var(--text3)">${e.message}</span><br><br><span style="font-size:11px">בדוק שה-GitHub Action רץ בהצלחה</span></div>`;
+    el.innerHTML=`<div class="empty">⚠️ ${e.message}<br><span style="font-size:10px;color:var(--text3)">בדוק שהקובץ history.json קיים</span></div>`;
   }
 }
 
-/* ══════════════════════════════════════════════════════
-   GPS
-══════════════════════════════════════════════════════ */
-function detectGps(){
-  const btn=document.getElementById('gps-btn');
-  btn.textContent='...';
-  navigator.geolocation?.getCurrentPosition(pos=>{
-    reverseGeocode(pos.coords.latitude, pos.coords.longitude);
-  },()=>{ btn.textContent='שגיאה'; setTimeout(()=>btn.textContent='נסה שוב',2000); });
+/* ===== NATIONAL ===== */
+function setNF(f,btn){
+  natF=f;
+  document.querySelectorAll('#page-nat .tab').forEach(b=>b.classList.remove('on'));
+  btn.classList.add('on');renderNat();
+}
+function renderNat(){
+  const el=document.getElementById('nlist');
+  const now=new Date();
+  let f=hist.filter(h=>{
+    if((now-h.t)/3600000>24)return false;
+    if(!myCity&&!areas.length)return true;
+    return!(h.cities||[]).every(c=>isMyArea(c));
+  });
+  if(natF==='mis')f=f.filter(h=>h.cat==='1'||h.cat==='5');
+  else if(natF==='uav')f=f.filter(h=>h.cat==='2');
+  else if(natF==='oth')f=f.filter(h=>h.cat!=='1'&&h.cat!=='2'&&h.cat!=='5');
+  if(!f.length){el.innerHTML='<div class="empty">✅<br>אין התרעות ב-24 שעות האחרונות<br><span style="font-size:10px">מחוץ לאזור שלך</span></div>';return;}
+  el.innerHTML=f.map(h=>{
+    const tp=h.T||T['1'];
+    const ts=h.t&&!isNaN(h.t)?
+      h.t.toLocaleTimeString('he-IL',{hour:'2-digit',minute:'2-digit'})+' · '+
+      h.t.toLocaleDateString('he-IL',{day:'2-digit',month:'2-digit'}):'—';
+    const others=(h.cities||[]).filter(c=>!isMyArea(c));
+    return`<div class="he" style="border-color:rgba(255,149,0,.1)">
+      <div class="he-dot" style="color:${tp.c}"></div>
+      <div style="flex:1;min-width:0">
+        <div class="he-t" style="color:${tp.c}">${tp.ic} ${tp.n}</div>
+        <div class="he-c">${others.slice(0,8).join(' · ')}${others.length>8?' +'+( others.length-8):''}</div>
+        <div class="he-ts">${ts} · ${(h.cities||[]).length} יישובים</div>
+      </div></div>`;
+  }).join('');
 }
 
-async function reverseGeocode(lat,lng){
+/* ===== GPS ===== */
+function doGps(){
+  const btn=document.getElementById('gps-btn');
+  btn.textContent='...';btn.disabled=true;
+  if(!navigator.geolocation){btn.textContent='לא זמין';btn.disabled=false;return;}
+  navigator.geolocation.getCurrentPosition(
+    pos=>reverseGeo(pos.coords.latitude,pos.coords.longitude),
+    ()=>{btn.textContent='שגיאה';btn.disabled=false;setTimeout(()=>{btn.textContent='זהה GPS';btn.disabled=false;},2500);}
+  );
+}
+async function reverseGeo(lat,lng){
   try{
     const r=await fetch(`https://nominatim.openstreetmap.org/reverse?lat=${lat}&lon=${lng}&format=json&accept-language=he`);
     const d=await r.json();
     const city=d.address?.city||d.address?.town||d.address?.village||d.address?.suburb||'לא ידוע';
     myCity=city;
-    myShelter=getShelterTime(city);
-    document.getElementById('city-name').textContent=city;
-    document.getElementById('city-sub').textContent=`זמן מקלט: ${myShelter} שניות`;
-    document.getElementById('gps-btn').textContent='עדכן';
+    document.getElementById('gps-city').textContent=city;
+    document.getElementById('gps-sub').textContent='זמן מקלט: '+getShelter(city)+'שנ\'';
+    const btn=document.getElementById('gps-btn');btn.textContent='עדכן';btn.disabled=false;
   }catch(e){
-    document.getElementById('gps-btn').textContent='שגיאה';
-    setTimeout(()=>document.getElementById('gps-btn').textContent='נסה שוב',2000);
+    const btn=document.getElementById('gps-btn');btn.textContent='שגיאה';btn.disabled=false;
   }
 }
 
-/* ══════════════════════════════════════════════════════
-   SOUND
-══════════════════════════════════════════════════════ */
-function playAlertSound(){
-  try{
-    const vol = getVolume();
-    if(vol === 0) return;
-    const ctx = new AudioContext();
-    const now = ctx.currentTime;
-
-    function tone(freq, start, dur, type='sine', gainVal){
-      const o = ctx.createOscillator();
-      const g = ctx.createGain();
-      o.connect(g); g.connect(ctx.destination);
-      o.frequency.value = freq;
-      o.type = type;
-      g.gain.setValueAtTime(0, start);
-      g.gain.linearRampToValueAtTime(vol * (gainVal||0.35), start + 0.02);
-      g.gain.linearRampToValueAtTime(0, start + dur - 0.02);
-      o.start(start); o.stop(start + dur);
-    }
-
-    function sweep(f1, f2, start, dur){
-      const o = ctx.createOscillator();
-      const g = ctx.createGain();
-      o.connect(g); g.connect(ctx.destination);
-      o.frequency.setValueAtTime(f1, start);
-      o.frequency.linearRampToValueAtTime(f2, start + dur);
-      o.type = 'sawtooth';
-      g.gain.setValueAtTime(vol * 0.3, start);
-      g.gain.linearRampToValueAtTime(0, start + dur);
-      o.start(start); o.stop(start + dur);
-    }
-
-    if(currentSoundType === 'siren'){
-      // עולה ויורד — סירנת אזעקה
-      for(let i=0;i<3;i++){
-        sweep(400, 1200, now + i*0.7, 0.35);
-        sweep(1200, 400, now + i*0.7 + 0.35, 0.35);
-      }
-    } else if(currentSoundType === 'beep'){
-      // ביפים קצרים
-      [0, 0.25, 0.5, 0.75, 1.0, 1.25].forEach(t =>
-        tone(880, now + t, 0.15, 'square', 0.3)
-      );
-    } else if(currentSoundType === 'alarm'){
-      // 3 פעמונים
-      [0, 0.5, 1.0].forEach(t => {
-        tone(1047, now + t,       0.3, 'sine', 0.4);
-        tone(1319, now + t + 0.1, 0.2, 'sine', 0.2);
-      });
-    } else if(currentSoundType === 'pulse'){
-      // פולסים מהירים
-      for(let i=0;i<8;i++){
-        tone(660, now + i*0.18, 0.12, 'triangle', 0.35);
-      }
-    }
-  }catch(e){}
+/* ===== WATCH AREAS ===== */
+function loadAreas(){
+  try{areas=JSON.parse(localStorage.getItem('mg_areas')||'[]');}catch(e){areas=[];}
+  renderAreas();
+}
+function saveAreas(){try{localStorage.setItem('mg_areas',JSON.stringify(areas));}catch(e){}}
+function addArea(){
+  const inp=document.getElementById('winp');
+  const v=(inp.value||'').trim();
+  if(!v||areas.includes(v)){inp.value='';return;}
+  areas.push(v);saveAreas();renderAreas();inp.value='';
+}
+function removeArea(i){areas.splice(i,1);saveAreas();renderAreas();}
+function renderAreas(){
+  const el=document.getElementById('wlist');
+  if(!areas.length){el.style.display='none';return;}
+  el.style.display='flex';
+  el.innerHTML=areas.map((a,i)=>
+    `<div style="display:inline-flex;align-items:center;gap:5px;
+      background:rgba(0,229,160,.08);border:1px solid rgba(0,229,160,.2);
+      border-radius:18px;padding:5px 8px 5px 12px;font-size:12px;white-space:nowrap">
+      <span style="color:var(--live)">📌 ${a}</span>
+      <button onclick="removeArea(${i})" style="background:none;border:none;
+        color:var(--text3);font-size:16px;cursor:pointer;padding:0;line-height:1">×</button>
+    </div>`
+  ).join('');
 }
 
-/* ══════════════════════════════════════════════════════
-   PUSH NOTIFICATIONS
-══════════════════════════════════════════════════════ */
-function toggleNotif(){
-  if(document.getElementById('ntf-tog').checked){
+/* ===== SOUND ===== */
+function getVol(){return(parseInt(document.getElementById('vol').value)||80)/100;}
+function playSound(){
+  try{
+    const v=getVol();if(!v)return;
+    const ctx=new AudioContext();
+    function b(f,t,d){
+      const o=ctx.createOscillator(),g=ctx.createGain();
+      o.connect(g);g.connect(ctx.destination);
+      o.frequency.value=f;o.type='sawtooth';
+      g.gain.setValueAtTime(0,t);g.gain.linearRampToValueAtTime(v*.38,t+.02);
+      g.gain.linearRampToValueAtTime(0,t+d);
+      o.start(t);o.stop(t+d);
+    }
+    const n=ctx.currentTime;
+    [880,660,880,660,880,660].forEach((f,i)=>b(f,n+i*.25,.2));
+  }catch(e){}
+}
+function testSnd(){playSound();}
+
+/* ===== PUSH ===== */
+function togNtf(){
+  if(document.getElementById('ntf').checked){
     Notification.requestPermission().then(p=>{
-      const sub=document.getElementById('ntf-sub');
-      if(p==='granted'){
-        if(sub) sub.textContent='פעיל ✅';
-      } else {
-        document.getElementById('ntf-tog').checked=false;
-        if(sub) sub.textContent=p==='denied'?'חסום בדפדפן':'לחץ להפעלה';
-      }
+      const s=document.getElementById('ntf-s');
+      if(p==='granted'){s.textContent='פעיל ✅';}
+      else{document.getElementById('ntf').checked=false;s.textContent=p==='denied'?'חסום בדפדפן':'לחץ להפעלה';}
     });
   }
   saveCfg();
 }
-function sendPush(title,body){
-  if(!document.getElementById('ntf-tog')?.checked) return;
-  if(Notification.permission==='granted'){
-    new Notification('⚠️ '+title,{body,icon:'icon.svg',tag:'magen-alert',requireInteraction:true});
-  }
+function doPush(title,body){
+  if(document.getElementById('ntf').checked&&Notification.permission==='granted')
+    new Notification('⚠️ '+title,{body,icon:'icon.svg',tag:'magen',requireInteraction:true});
 }
 
-/* ══════════════════════════════════════════════════════
-   TEST CONNECTION
-══════════════════════════════════════════════════════ */
-async function testConn(){
-  const res=document.getElementById('test-btn-res');
-  res.textContent='⏳ בודק...'; res.style.color='var(--text3)';
-  try{
-    const d=await fetchLocal('alerts.json');
-    const m=await fetchLocal('meta.json').catch(()=>null);
-    const age=m?.updated?Math.round((Date.now()-new Date(m.updated))/1000)+"שנ'":"-";
-    res.textContent=`✅ עובד! נתונים לפני ${age}`;
-    res.style.color='var(--live)';
-  }catch(e){
-    res.textContent='❌ '+e.message;
-    res.style.color='var(--red)';
-  }
-}
-
-/* ══ VOLUME + SOUND TYPE ══ */
-let currentVol = 80;    // 0-100
-let currentSoundType = 'siren';
-
-function adjVol(delta){
-  currentVol = Math.max(0, Math.min(100, currentVol + delta));
-  updateVolUI();
-  saveCfg();
-}
-function updateVolUI(){
-  const lbl = document.getElementById('vol-label');
-  const bar = document.getElementById('vol-bar');
-  const ico = document.getElementById('vol-ico');
-  if(lbl) lbl.textContent = currentVol + '%';
-  if(bar) bar.style.width = currentVol + '%';
-  if(ico) ico.textContent = currentVol===0 ? '🔇' : currentVol<40 ? '🔈' : currentVol<75 ? '🔉' : '🔊';
-}
-function getVolume(){ return currentVol / 100; }
-
-function setSoundType(type, btn){
-  currentSoundType = type;
-  document.querySelectorAll('.snd-type-btn').forEach(b=>b.classList.remove('on'));
-  btn.classList.add('on');
-  const labels = {siren:'סירנה', beep:'ביפ', alarm:'אזעקה', pulse:'פולס'};
-  const lbl = document.getElementById('snd-type-label');
-  if(lbl) lbl.textContent = labels[type]||type;
-  saveCfg();
-  testSound(); // preview immediately
-}
-
-function testSound(){ playAlertSound(); }
-
-function manualRefresh(){
-  const spin = document.getElementById('fetch-spin');
-  if(spin){ spin.style.opacity='1'; setTimeout(()=>spin.style.opacity='0', 1500); }
-  poll();
-  loadHist();
-}
-
-function showFetchSpin(){
-  const spin = document.getElementById('fetch-spin');
-  if(spin) spin.style.opacity='1';
-}
-function hideFetchSpin(){
-  const spin = document.getElementById('fetch-spin');
-  if(spin) spin.style.opacity='0';
-}
-
-function updateDataIndicator(ok, githubTime){
-  const dot=document.getElementById('data-live-dot');
-  const now=new Date();
-  if(dot) dot.style.background=ok?'var(--live)':'var(--red)';
-  const diStatus=document.getElementById('di-status');
-  const diLast=document.getElementById('di-last');
-  const diGithub=document.getElementById('di-github');
-  if(diStatus){ diStatus.textContent=ok?'✅ מחובר':'❌ שגיאה'; diStatus.style.color=ok?'var(--live)':'var(--red)'; }
-  if(diLast) diLast.textContent=now.toLocaleTimeString('he-IL');
-  if(diGithub&&githubTime) diGithub.textContent=githubTime;
-}
-
-/* ══════════════════════════════════════════════════════
-   SETTINGS PERSIST
-══════════════════════════════════════════════════════ */
-function saveCfg(){
-  try{
-    localStorage.setItem('mg3_s',  document.getElementById('snd-tog').checked);
-    localStorage.setItem('mg3_n',  document.getElementById('ntf-tog').checked);
-    localStorage.setItem('mg3_iv', document.getElementById('iv-sel').value);
-    localStorage.setItem('mg3_vol', currentVol);
-    localStorage.setItem('mg3_snd', currentSoundType);
-  }catch(e){}
-}
-function loadCfg(){
-  try{
-    const s=localStorage.getItem('mg3_s');   if(s!==null) document.getElementById('snd-tog').checked=s==='true';
-    const n=localStorage.getItem('mg3_n');   if(n!==null) document.getElementById('ntf-tog').checked=n==='true';
-    const iv=localStorage.getItem('mg3_iv'); if(iv) document.getElementById('iv-sel').value=iv;
-    const vol=localStorage.getItem('mg3_vol');
-    if(vol){ currentVol=parseInt(vol); updateVolUI(); }
-    const snd=localStorage.getItem('mg3_snd');
-    if(snd){
-      currentSoundType=snd;
-      document.querySelectorAll('.snd-type-btn').forEach(b=>{
-        b.classList.toggle('on', b.dataset.type===snd);
-      });
-      const labels={siren:'סירנה',beep:'ביפ',alarm:'אזעקה',pulse:'פולס'};
-      const lbl=document.getElementById('snd-type-label');
-      if(lbl) lbl.textContent=labels[snd]||snd;
-    }
-    const perm=Notification?.permission;
-    const ntfSub=document.getElementById('ntf-sub');
-    if(ntfSub) ntfSub.textContent=perm==='granted'?'פעיל ✅':perm==='denied'?'חסום בדפדפן':'לחץ להפעלה';
-  }catch(e){}
-}
-
-/* ══════════════════════════════════════════════════════
-   AI — CLAUDE ANALYSIS
-══════════════════════════════════════════════════════ */
-function onKeyInput(){ /* clear status on type */ document.getElementById('ai-status').textContent=''; }
-
-function getApiKey(){ try{return localStorage.getItem('mg3_k')||''}catch(e){return''} }
-
+/* ===== AI ===== */
+function getKey(){try{return localStorage.getItem('mg_k')||'';}catch(e){return '';}}
+function aiInp(){document.getElementById('ai-st').textContent='';}
 function saveKey(){
   const inp=document.getElementById('api-inp');
-  const val=(inp.value||'').trim();
-  if(!val||val.includes('•')){
-    document.getElementById('ai-status').textContent='❌ מפתח לא תקין';
-    document.getElementById('ai-status').style.color='var(--red)';
-    return;
+  const v=(inp.value||'').trim();
+  if(!v||v.includes('•')){
+    document.getElementById('ai-st').textContent='❌ מפתח לא תקין';
+    document.getElementById('ai-st').style.color='var(--red)';return;
   }
-  localStorage.setItem('mg3_k',val);
-  inp.value=val.slice(0,18)+'•'.repeat(16);
-  document.getElementById('ai-status').textContent='✅ מפתח נשמר';
-  document.getElementById('ai-status').style.color='var(--live)';
-  const btn=document.getElementById('ai-analyze-btn');
-  btn.disabled=false;
-  btn.style.opacity='1';
+  localStorage.setItem('mg_k',v);
+  inp.value=v.slice(0,18)+'•'.repeat(14);
+  document.getElementById('ai-st').textContent='✅ נשמר';
+  document.getElementById('ai-st').style.color='var(--live)';
+  document.getElementById('ai-btn').disabled=false;
 }
-
-function initAiDisplay(){
-  const k=getApiKey();
+function initAi(){
+  const k=getKey();
   if(k){
-    document.getElementById('api-inp').value=k.slice(0,18)+'•'.repeat(16);
-    document.getElementById('ai-status').textContent='✅ מפתח שמור';
-    document.getElementById('ai-status').style.color='var(--live)';
-    const btn=document.getElementById('ai-analyze-btn');
-    btn.disabled=false;
-    btn.style.opacity='1';
+    document.getElementById('api-inp').value=k.slice(0,18)+'•'.repeat(14);
+    document.getElementById('ai-st').textContent='✅ מפתח שמור';
+    document.getElementById('ai-st').style.color='var(--live)';
+    document.getElementById('ai-btn').disabled=false;
   }
 }
-
-async function runAnalysis(){
-  const key=getApiKey();
-  if(!key){ document.getElementById('ai-status').textContent='❌ חסר API key'; return; }
-  const btn=document.getElementById('ai-analyze-btn');
-  const resp=document.getElementById('ai-response');
-  const dot=document.getElementById('ai-live-dot');
-  btn.disabled=true;
-  if(dot) dot.style.background='var(--amber)';
-  resp.innerHTML='<div class="ai-thinking"><span></span><span></span><span></span></div>';
-
+async function doAi(){
+  const key=getKey();
+  if(!key)return;
+  const btn=document.getElementById('ai-btn'),out=document.getElementById('ai-out'),dot=document.getElementById('ai-dot');
+  btn.disabled=true;dot.style.background='var(--amber)';
+  out.innerHTML='<div class="think"><span></span><span></span><span></span></div>';
   const now=new Date();
-  const histSummary=hist.slice(0,20).map(h=>`${h.T?.n||'התרעה'} ב-${(h.cities||[]).slice(0,3).join('/')}`).join('\n');
-  const currentAlert=liveAlerts.length?`⚠️ התרעה פעילה כעת: ${liveAlerts.slice(0,5).join(', ')}`:'אין התרעות פעילות כרגע';
-  const prompt=`אתה מנתח ביטחוני ישראלי מומחה. נתח את המצב הביטחוני הנוכחי בתמציתיות.
+  const cur=liveData?'⚠️ התרעה פעילה: '+(liveData.data||[]).slice(0,5).join(', '):'אין התרעות פעילות';
+  const hs=hist.slice(0,15).map(h=>`${h.T?.n||'התרעה'}: ${(h.cities||[]).slice(0,3).join('/')}`).join('\n');
+  const prompt=`אתה מנתח ביטחוני ישראלי מומחה. נתח בתמציתיות.
 
-מצב נוכחי: ${currentAlert}
+מצב: ${cur}
 שעה: ${now.toLocaleTimeString('he-IL')} ${now.toLocaleDateString('he-IL')}
-עיר המשתמש: ${myCity||'לא ידוע'}
+עיר: ${myCity||'לא ידוע'}
+אזורי מעקב נוספים: ${areas.join(', ')||'אין'}
 
 התרעות אחרונות:
-${histSummary||'אין היסטוריה'}
+${hs||'אין'}
 
-ספק:
-1. הערכת מצב קצרה (2-3 משפטים)
-2. המלצה מיידית לאזרח
-3. תחזית קצרה
-
-ענה בעברית, בצורה ברורה וקצרה. אין להוסיף הסתייגויות משפטיות.`;
-
+תן: 1. הערכת מצב (2-3 משפטים) 2. המלצה מיידית 3. תחזית קצרה
+ענה בעברית, קצר וברור.`;
   try{
     const r=await fetch('https://api.anthropic.com/v1/messages',{
       method:'POST',
       headers:{
         'Content-Type':'application/json',
-        'x-api-key': key,
-        'anthropic-version': '2023-06-01',
+        'x-api-key':key,
+        'anthropic-version':'2023-06-01',
         'anthropic-dangerous-direct-browser-access':'true'
       },
-      body:JSON.stringify({
-        model:'claude-haiku-4-5-20251001',
-        max_tokens:600,
-        messages:[{role:'user',content:prompt}]
-      })
+      body:JSON.stringify({model:'claude-haiku-4-5-20251001',max_tokens:600,
+        messages:[{role:'user',content:prompt}]})
     });
-    if(!r.ok) throw new Error('API error '+r.status);
-    const data=await r.json();
-    const text=data.content?.find(b=>b.type==='text')?.text||'אין תשובה';
-    resp.innerHTML=text;
-    resp.style.color='var(--text)';
-    if(dot) dot.style.background='var(--live)';
+    if(!r.ok)throw new Error('API '+r.status);
+    const d=await r.json();
+    const txt=d.content?.find(b=>b.type==='text')?.text||'אין תשובה';
+    out.textContent=txt;out.style.color='var(--text)';
+    dot.style.background='var(--live)';
   }catch(e){
-    resp.innerHTML='⚠️ '+e.message;
-    resp.style.color='var(--red)';
-    if(dot) dot.style.background='var(--red)';
+    out.textContent='⚠️ '+e.message;out.style.color='var(--red)';
+    dot.style.background='var(--red)';
   }
   btn.disabled=false;
 }
 
-/* ══════════════════════════════════════════════════════
-   SERVICE WORKER (PWA)
-══════════════════════════════════════════════════════ */
-function registerSW(){
-  if(location.protocol!=='https:'&&location.hostname!=='localhost') return;
-  if(!('serviceWorker' in navigator)) return;
-  const sw=`self.addEventListener('fetch',e=>{});`;
-  const blob=new Blob([sw],{type:'application/javascript'});
-  const url=URL.createObjectURL(blob);
-  navigator.serviceWorker.register(url).catch(()=>{});
+/* ===== SETTINGS ===== */
+function saveCfg(){
+  try{
+    localStorage.setItem('mg_snd',document.getElementById('snd').checked);
+    localStorage.setItem('mg_ntf',document.getElementById('ntf').checked);
+    localStorage.setItem('mg_vol',document.getElementById('vol').value);
+    localStorage.setItem('mg_iv',document.getElementById('iv').value);
+  }catch(e){}
+}
+function loadCfg(){
+  try{
+    const s=localStorage.getItem('mg_snd');if(s!==null)document.getElementById('snd').checked=s==='true';
+    const n=localStorage.getItem('mg_ntf');if(n!==null)document.getElementById('ntf').checked=n==='true';
+    const v=localStorage.getItem('mg_vol');if(v){document.getElementById('vol').value=v;document.getElementById('vol-lbl').textContent=v+'%';}
+    const iv=localStorage.getItem('mg_iv');if(iv)document.getElementById('iv').value=iv;
+    const p=Notification?.permission;
+    document.getElementById('ntf-s').textContent=p==='granted'?'פעיל ✅':p==='denied'?'חסום בדפדפן':'לחץ להפעלה';
+  }catch(e){}
 }
 
-/* ══════════════════════════════════════════════════════
-   INIT
-══════════════════════════════════════════════════════ */
+/* ===== TEST CONN ===== */
+async function testConn(){
+  const res=document.getElementById('test-res');
+  res.textContent='⏳ בודק...';res.style.color='var(--text3)';
+  try{
+    const r=await fetch('alerts.json?_='+Date.now(),{cache:'no-store'});
+    const m=await fetch('meta.json?_='+Date.now(),{cache:'no-store'}).then(r=>r.json()).catch(()=>null);
+    const age=m?.updated?Math.round((Date.now()-new Date(m.updated))/1000)+'שנ\'':'?';
+    res.textContent=r.ok?`✅ עובד! נתונים לפני ${age}`:'❌ HTTP '+r.status;
+    res.style.color=r.ok?'var(--live)':'var(--red)';
+  }catch(e){
+    res.textContent='❌ '+e.message;res.style.color='var(--red)';
+  }
+}
+
+/* ===== INIT ===== */
 async function init(){
-  loadCfg();
-  loadWatchAreas();
-  initAiDisplay();
-  registerSW();
+  loadCfg();loadAreas();initAi();
+  // Auto GPS if permission granted
   if(navigator.geolocation&&navigator.permissions){
-    navigator.permissions.query({name:'geolocation'}).then(r=>{
-      if(r.state==='granted') detectGps();
+    navigator.permissions.query({name:'geolocation'}).then(p=>{
+      if(p.state==='granted')doGps();
     }).catch(()=>{});
   }
   startPoll();
   await loadHist();
-  computeStats();
-  setInterval(()=>{ loadHist(); computeStats(); }, 60*1000);
+  setInterval(()=>{loadHist();},60000);
 }
 
 init();

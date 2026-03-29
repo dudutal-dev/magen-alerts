@@ -700,7 +700,7 @@ body {
   position: relative;
   z-index: 10;
   display: grid;
-  grid-template-columns: repeat(4, 1fr);
+  grid-template-columns: repeat(5, 1fr);
   border-top: 1px solid var(--border);
   background: rgba(3,6,8,.92);
   backdrop-filter: blur(20px);
@@ -889,6 +889,24 @@ body {
 /* ═══════════════════════════════════════════
    MISC
 ═══════════════════════════════════════════ */
+.snd-type-btn {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  color: var(--text3);
+  font-family: var(--heb);
+  font-size: 13px;
+  font-weight: 600;
+  padding: 9px;
+  cursor: pointer;
+  transition: all .2s;
+  text-align: center;
+}
+.snd-type-btn.on {
+  background: rgba(255,149,0,.1);
+  border-color: rgba(255,149,0,.3);
+  color: #ff9500;
+}
 .sep { height: 1px; background: var(--border); width: 100%; }
 .scrollable { overflow-y: auto; -webkit-overflow-scrolling: touch; }
 </style>
@@ -948,7 +966,25 @@ body {
         </div>
       </div>
 
-      <div id="ticker">טוען נתונים...</div>
+      <!-- Live data bar -->
+      <div style="display:flex;align-items:center;gap:8px;width:100%">
+        <div id="fetch-spin" style="
+          width:14px;height:14px;border-radius:50%;
+          border:2px solid rgba(0,229,160,.2);
+          border-top-color:var(--live);
+          flex-shrink:0;opacity:0;
+          transition:opacity .3s;
+          animation:spin 1s linear infinite"></div>
+        <div id="ticker" style="flex:1;font-family:var(--mono);font-size:11px;color:var(--text3)">טוען נתונים...</div>
+        <button onclick="manualRefresh()" style="
+          background:rgba(0,229,160,.07);
+          border:1px solid rgba(0,229,160,.18);
+          border-radius:8px;padding:5px 11px;
+          color:var(--live);font-family:var(--heb);
+          font-size:12px;font-weight:700;cursor:pointer;
+          flex-shrink:0" title="רענן עכשיו">↻ רענן</button>
+      </div>
+      <style>@keyframes spin{to{transform:rotate(360deg)}}</style>
 
       <!-- Alert banner (shown when active alert) -->
       <div id="alert-banner">
@@ -979,14 +1015,114 @@ body {
         </div>
       </div>
 
-      <!-- My City -->
-      <div id="my-city-row">
-        <div id="gps-icon">📍</div>
-        <div>
-          <div id="city-name">מיקום לא ידוע</div>
-          <div id="city-sub">לחץ לזיהוי עיר</div>
+      <!-- Watch Areas Card -->
+      <div id="watch-card" style="
+        width:100%;background:var(--panel);border:1px solid var(--border);
+        border-radius:var(--r);padding:0;overflow:hidden">
+
+        <!-- Card header -->
+        <div style="padding:12px 16px 10px;border-bottom:1px solid var(--border);
+          display:flex;align-items:center;gap:8px">
+          <span style="font-family:var(--raj);font-size:12px;font-weight:700;
+            letter-spacing:2px;color:var(--text3)">📌 אזורים למעקב</span>
+          <span style="font-size:10px;color:var(--text3);margin-right:auto">
+            התרעה תופיע גם עבור אזורים אלו
+          </span>
         </div>
-        <button id="gps-btn" onclick="detectGps()">זהה מיקום</button>
+
+        <!-- Primary city (GPS) -->
+        <div id="my-city-row" style="border-bottom:1px solid var(--border)">
+          <div id="gps-icon">📍</div>
+          <div>
+            <div id="city-name">מיקום לא ידוע</div>
+            <div id="city-sub">מיקום GPS</div>
+          </div>
+          <button id="gps-btn" onclick="detectGps()">זהה GPS</button>
+        </div>
+
+        <!-- Watch areas list -->
+        <div id="watch-list" style="display:none;padding:10px 14px 4px"></div>
+
+        <!-- Add area row -->
+        <div style="padding:10px 14px 12px;display:flex;gap:8px;align-items:center">
+          <input id="area-inp" type="text" placeholder="הוסף עיר / אזור..."
+            list="cities-datalist"
+            style="flex:1;background:rgba(0,0,0,.25);border:1px solid var(--border-hi);
+              border-radius:10px;color:var(--text);font-family:var(--heb);font-size:13px;
+              padding:9px 12px;outline:none;-webkit-appearance:none"
+            onkeydown="if(event.key==='Enter')addWatchArea()">
+          <button onclick="addWatchArea()" style="
+            background:rgba(0,229,160,.1);border:1px solid rgba(0,229,160,.25);
+            border-radius:10px;color:var(--live);font-family:var(--heb);
+            font-size:13px;font-weight:700;padding:9px 16px;cursor:pointer;
+            white-space:nowrap;flex-shrink:0">+ הוסף</button>
+        </div>
+
+        <!-- Common cities datalist -->
+        <datalist id="cities-datalist">
+          <option value="תל אביב"><option value="ירושלים"><option value="חיפה">
+          <option value="באר שבע"><option value="אשדוד"><option value="אשקלון">
+          <option value="רחובות"><option value="פתח תקווה"><option value="נתניה">
+          <option value="ראשון לציון"><option value="הרצליה"><option value="רעננה">
+          <option value="כפר סבא"><option value="רמת גן"><option value="גבעתיים">
+          <option value="חולון"><option value="בת ים"><option value="בני ברק">
+          <option value="רמלה"><option value="לוד"><option value="מודיעין">
+          <option value="עכו"><option value="נהריה"><option value="טבריה">
+          <option value="צפת"><option value="קריית שמונה"><option value="נצרת">
+          <option value="אילת"><option value="דימונה"><option value="אופקים">
+          <option value="נתיבות"><option value="סדרות"><option value="שדרות">
+          <option value="יבנה"><option value="גדרה"><option value="קריית גת">
+          <option value="בית שמש"><option value="מעלה אדומים"><option value="אלעד">
+          <option value="ביתר עילית"><option value="מודיעין עילית"><option value="ערד">
+          <option value="קריית ביאליק"><option value="קריית ים"><option value="קריית מוצקין">
+          <option value="קריית אתא"><option value="קריית מלאכי"><option value="קריית ארבע">
+          <option value="חדרה"><option value="זכרון יעקב"><option value="עפולה">
+          <option value="בית שאן"><option value="אשתאול"><option value="מגדל העמק">
+          <option value="עומר"><option value="מיתר"><option value="לקיה">
+          <option value="רהט"><option value="כסיפה"><option value="חורה">
+          <option value="נחל עוז"><option value="כפר עזה"><option value="בארי">
+          <option value="ניר עוז"><option value="רעים"><option value="הולית">
+          <option value="יד מרדכי"><option value="גן יבנה"><option value="גדרות">
+          <option value="זיקים"><option value="נירים"><option value="מפלסים">
+        </datalist>
+      </div>
+    </div>
+
+    <!-- ── NATIONAL ALERTS PAGE ── -->
+    <div class="page" id="page-national">
+      <div style="padding:16px 16px 0">
+        <div class="page-title">🗺️ &nbsp;אזעקות ארציות — מידע בלבד</div>
+        <div style="font-size:12px;color:var(--text3);margin-bottom:14px;line-height:1.6">
+          התרעות פעילות <strong style="color:var(--amber)">מחוץ לאזור שלך</strong> — למידע כללי על המצב הביטחוני.
+        </div>
+      </div>
+
+      <!-- Live national alert strip -->
+      <div id="nat-live-strip" style="display:none;margin:0 16px 14px;
+        background:linear-gradient(135deg,rgba(255,149,0,.12),rgba(255,149,0,.04));
+        border:1px solid rgba(255,149,0,.3);border-radius:14px;padding:14px 16px">
+        <div style="display:flex;align-items:center;gap:8px;margin-bottom:8px">
+          <div style="width:8px;height:8px;border-radius:50%;background:var(--amber);
+            box-shadow:0 0 8px var(--amber);animation:blink .6s infinite"></div>
+          <span style="font-family:var(--raj);font-size:13px;font-weight:700;
+            letter-spacing:1.5px;color:var(--amber)">LIVE — אזעקה פעילה באזורים אחרים</span>
+        </div>
+        <div id="nat-live-type" style="font-size:16px;font-weight:700;margin-bottom:8px"></div>
+        <div id="nat-live-cities" style="display:flex;flex-wrap:wrap;gap:5px"></div>
+      </div>
+
+      <!-- Filter -->
+      <div style="padding:0 16px;margin-bottom:12px">
+        <div style="display:flex;gap:6px">
+          <button class="htab on" onclick="setNatFilter('all',this)" id="nf-all">הכל</button>
+          <button class="htab" onclick="setNatFilter('missiles',this)" id="nf-missiles">🚀 רקטות</button>
+          <button class="htab" onclick="setNatFilter('uav',this)" id="nf-uav">✈️ כלי טיס</button>
+          <button class="htab" onclick="setNatFilter('other',this)" id="nf-other">⚠️ אחר</button>
+        </div>
+      </div>
+
+      <div id="nat-list" style="padding:0 16px 16px;display:flex;flex-direction:column;gap:8px">
+        <div class="empty">⏳<br>טוען נתונים...</div>
       </div>
     </div>
 
@@ -1003,7 +1139,7 @@ body {
 
     <!-- ── AI PAGE ── -->
     <div class="page" id="page-ai">
-      <div class="page-title">✦ &nbsp;ניתוח Claude AI</div>
+      <div class="page-title">🧠 >✦ &nbsp;ניתוח Claude AI<nbsp;ניתוח Claude AI</div>
 
       <div id="ai-key-card">
         <div class="card-title">ANTHROPIC API KEY</div>
@@ -1018,7 +1154,7 @@ body {
         <div id="ai-response" style="color:var(--text3);font-size:13px">
           הזן מפתח API לקבלת ניתוח אינטליגנטי של מצב ביטחוני, דפוסי התרעות ומדיניות מקלט.
         </div>
-        <button id="ai-analyze-btn" onclick="runAnalysis()" disabled>✦ נתח מצב עכשווי</button>
+        <button id="ai-analyze-btn" onclick="runAnalysis()" disabled>🧠 נתח מצב עכשווי</button>
       </div>
     </div>
 
@@ -1031,18 +1167,63 @@ body {
           <div class="s-left">
             <div class="s-ico" style="background:rgba(255,149,0,.08)">🔊</div>
             <div>
-              <div class="s-title">צלצול התרעה</div>
-              <div class="s-sub">צליל בהתרעה פעילה</div>
+              <div class="s-title">צליל התרעה</div>
+              <div class="s-sub">הפעל צליל בהתרעה</div>
             </div>
           </div>
           <label class="tog"><input type="checkbox" id="snd-tog" checked onchange="saveCfg()"><div class="tog-track"></div></label>
+        </div>
+
+        <!-- Sound type selector -->
+        <div class="s-item" style="flex-direction:column;align-items:flex-start;gap:10px">
+          <div class="s-left">
+            <div class="s-ico" style="background:rgba(255,149,0,.08)">🎵</div>
+            <div>
+              <div class="s-title">סוג צליל</div>
+              <div class="s-sub" id="snd-type-label">סירנה</div>
+            </div>
+          </div>
+          <div style="display:grid;grid-template-columns:repeat(2,1fr);gap:7px;width:100%;padding-right:48px">
+            <button class="snd-type-btn on" data-type="siren" onclick="setSoundType('siren',this)">🚨 סירנה</button>
+            <button class="snd-type-btn" data-type="beep" onclick="setSoundType('beep',this)">📳 ביפ</button>
+            <button class="snd-type-btn" data-type="alarm" onclick="setSoundType('alarm',this)">🔔 אזעקה</button>
+            <button class="snd-type-btn" data-type="pulse" onclick="setSoundType('pulse',this)">💓 פולס</button>
+          </div>
+        </div>
+
+        <!-- Volume -->
+        <div class="s-item" style="flex-direction:column;align-items:flex-start;gap:10px">
+          <div class="s-left">
+            <div class="s-ico" style="background:rgba(255,149,0,.08)" id="vol-ico">🔉</div>
+            <div>
+              <div class="s-title">עוצמת קול</div>
+              <div class="s-sub" id="vol-label">80%</div>
+            </div>
+          </div>
+          <div style="display:flex;align-items:center;gap:10px;width:100%;padding-right:48px">
+            <button onclick="adjVol(-10)" style="
+              width:36px;height:36px;border-radius:50%;
+              background:var(--surface);border:1px solid var(--border);
+              color:var(--text2);font-size:18px;cursor:pointer;flex-shrink:0">−</button>
+            <div style="flex:1;height:6px;background:var(--surface);border-radius:3px;overflow:hidden;position:relative">
+              <div id="vol-bar" style="height:100%;width:80%;background:linear-gradient(90deg,var(--live),var(--cyan));border-radius:3px;transition:width .2s"></div>
+            </div>
+            <button onclick="adjVol(10)" style="
+              width:36px;height:36px;border-radius:50%;
+              background:var(--surface);border:1px solid var(--border);
+              color:var(--text2);font-size:18px;cursor:pointer;flex-shrink:0">+</button>
+            <button onclick="testSound()" style="
+              background:rgba(255,149,0,.1);border:1px solid rgba(255,149,0,.25);
+              border-radius:10px;color:#ff9500;font-family:var(--heb);font-size:13px;
+              font-weight:700;padding:8px 14px;cursor:pointer;white-space:nowrap;flex-shrink:0">▶ בדוק</button>
+          </div>
         </div>
         <div class="s-item">
           <div class="s-left">
             <div class="s-ico" style="background:rgba(0,200,255,.08)">🔔</div>
             <div>
-              <div class="s-title">Push Notifications</div>
-              <div class="s-sub">התרעה גם ברקע</div>
+              <div class="s-title">התראות קופצות</div>
+              <div class="s-sub" id="ntf-sub">לחץ להפעלה</div>
             </div>
           </div>
           <label class="tog"><input type="checkbox" id="ntf-tog" onchange="toggleNotif()"><div class="tog-track"></div></label>
@@ -1063,24 +1244,42 @@ body {
         </div>
       </div>
 
+      <!-- DATA SOURCE CARD -->
       <div class="s-card">
-        <div class="s-item" style="flex-direction:column;align-items:flex-start;gap:8px">
-          <div class="s-left">
-            <div class="s-ico" style="background:rgba(0,229,160,.08)">⚡</div>
-            <div>
-              <div class="s-title">מקור נתונים</div>
-              <div class="s-sub">GitHub Actions → קבצים מקומיים</div>
+        <div class="s-item" style="flex-direction:column;align-items:flex-start;gap:12px">
+          <div class="s-left" style="width:100%;justify-content:space-between">
+            <div style="display:flex;align-items:center;gap:12px">
+              <div class="s-ico" style="background:rgba(0,229,160,.08)">⚡</div>
+              <div>
+                <div class="s-title">מקור נתונים</div>
+                <div class="s-sub">GitHub Actions → alerts.json</div>
+              </div>
+            </div>
+            <div id="data-live-dot" style="
+              width:10px;height:10px;border-radius:50%;
+              background:var(--text3);flex-shrink:0;
+              transition:background .3s;margin-left:4px"></div>
+          </div>
+          <!-- Live data status box -->
+          <div style="width:100%;background:rgba(0,0,0,.25);border-radius:10px;padding:12px 14px;
+            border:1px solid var(--border);font-family:var(--mono);font-size:11px;line-height:2">
+            <div style="display:flex;justify-content:space-between">
+              <span style="color:var(--text3)">עדכון אחרון מ-GitHub:</span>
+              <span id="di-github" style="color:var(--text2)">—</span>
+            </div>
+            <div style="display:flex;justify-content:space-between">
+              <span style="color:var(--text3)">בדיקה אחרונה:</span>
+              <span id="di-last" style="color:var(--text2)">—</span>
+            </div>
+            <div style="display:flex;justify-content:space-between">
+              <span style="color:var(--text3)">סטטוס:</span>
+              <span id="di-status" style="color:var(--live)">—</span>
             </div>
           </div>
-          <div style="font-size:11px;color:var(--text3);line-height:1.7;padding-right:48px">
-            GitHub Actions רץ כל דקה בשרת GitHub, מביא מפיקוד העורף ושומר alerts.json.
-            האפליקציה קוראת מהקובץ — אותו origin, אפס CORS.
-          </div>
         </div>
-        <div id="conn-info">——</div>
-        <div style="padding:12px 18px">
-          <button class="action-btn" onclick="testConn()" id="test-btn">בדוק חיבור</button>
-          <div id="test-btn-res" style="margin-top:8px"></div>
+        <div style="padding:0 16px 14px">
+          <button class="action-btn" onclick="testConn()">בדוק חיבור</button>
+          <div id="test-btn-res" style="margin-top:8px;text-align:center;font-size:12px;color:var(--text3)"></div>
         </div>
       </div>
 
@@ -1105,12 +1304,17 @@ body {
       <div class="nav-lbl">RADAR</div>
       <div class="nav-badge" id="nb-badge"></div>
     </button>
+    <button class="nav-btn" id="nb-national" onclick="setPage('national',this)">
+      <div class="nav-icon">🗺️</div>
+      <div class="nav-lbl">ארצי</div>
+      <div class="nav-badge" id="nb-nat-badge"></div>
+    </button>
     <button class="nav-btn" id="nb-hist" onclick="setPage('history',this)">
       <div class="nav-icon">📋</div>
       <div class="nav-lbl">FEED</div>
     </button>
     <button class="nav-btn" id="nb-ai" onclick="setPage('ai',this)">
-      <div class="nav-icon">✦</div>
+      <div class="nav-icon">🧠</div>
       <div class="nav-lbl">AI</div>
     </button>
     <button class="nav-btn" id="nb-cfg" onclick="setPage('settings',this)">
@@ -1170,6 +1374,61 @@ const TYPES = {
 let hist=[], myCity=null, myShelter=90, liveAlerts=[], histTab='24h';
 let pollTimer=null, cdTimer=null, cdSecs=0;
 let lastAlertHash='';
+let watchAreas = []; // additional manual areas
+
+/* ══════════════════════════════════════════════════════
+   WATCH AREAS
+══════════════════════════════════════════════════════ */
+function loadWatchAreas(){
+  try{
+    const saved = localStorage.getItem('mg3_areas');
+    watchAreas = saved ? JSON.parse(saved) : [];
+  }catch(e){ watchAreas=[]; }
+  renderWatchList();
+}
+
+function saveWatchAreas(){
+  try{ localStorage.setItem('mg3_areas', JSON.stringify(watchAreas)); }catch(e){}
+}
+
+function addWatchArea(){
+  const inp = document.getElementById('area-inp');
+  const val = (inp.value||'').trim();
+  if(!val) return;
+  if(watchAreas.includes(val)){ inp.value=''; return; }
+  watchAreas.push(val);
+  saveWatchAreas();
+  renderWatchList();
+  inp.value='';
+}
+
+function removeWatchArea(i){
+  watchAreas.splice(i,1);
+  saveWatchAreas();
+  renderWatchList();
+}
+
+function renderWatchList(){
+  const el = document.getElementById('watch-list');
+  if(!watchAreas.length){ el.style.display='none'; return; }
+  el.style.display='block';
+  el.innerHTML = watchAreas.map((a,i)=>`
+    <div style="display:inline-flex;align-items:center;gap:5px;
+      background:rgba(0,229,160,.08);border:1px solid rgba(0,229,160,.2);
+      border-radius:20px;padding:4px 10px 4px 12px;margin:0 5px 6px 0;
+      font-size:12px;font-family:var(--heb)">
+      <span style="color:var(--live)">📌 ${a}</span>
+      <button onclick="removeWatchArea(${i})" style="
+        background:none;border:none;color:var(--text3);font-size:14px;
+        cursor:pointer;padding:0 2px;line-height:1">×</button>
+    </div>`).join('');
+}
+
+function isMyArea(city){
+  if(!city) return false;
+  const areas = [myCity, ...watchAreas].filter(Boolean);
+  return areas.some(a => city===a || city.includes(a) || a.includes(city));
+}
 
 /* ══════════════════════════════════════════════════════
    NAV
@@ -1223,9 +1482,11 @@ async function poll(){
       '  ·  נתוני GitHub: ' + updAt;
 
     setStatus('live','LIVE');
+    updateDataIndicator(true, updAt);
 
     if(alertData.status==='fulfilled'){
       const d = alertData.value;
+      updateNationalLiveStrip(d);
       if(d && d.data && d.data.length > 0){
         const hash = JSON.stringify(d.data)+d.cat;
         if(hash !== lastAlertHash){ lastAlertHash=hash; triggerAlert(d); }
@@ -1242,6 +1503,7 @@ async function poll(){
   }catch(e){
     setStatus('wait','שגיאה');
     document.getElementById('ticker').textContent='⚠️ '+e.message;
+    updateDataIndicator(false, null);
   }
 }
 
@@ -1324,8 +1586,8 @@ function renderBannerCities(cities){
   const el=document.getElementById('banner-cities');
   const shown = cities.slice(0,10);
   el.innerHTML = shown.map(c=>{
-    const isMe = myCity && c.includes(myCity);
-    return`<div class="city-chip${isMe?' user':''}">${c}</div>`;
+    const isMe = isMyArea(c);
+    return`<div class="city-chip${isMe?' user':''}">${isMe?'📍 ':''}${c}</div>`;
   }).join('')+(cities.length>10?`<div class="city-chip">+${cities.length-10}</div>`:'');
 }
 
@@ -1438,6 +1700,99 @@ function renderHist(){
   }).join('');
 }
 
+/* ══════════════════════════════════════════════════════
+   NATIONAL ALERTS PAGE
+══════════════════════════════════════════════════════ */
+let natFilter = 'all';
+
+function setNatFilter(f, btn){
+  natFilter = f;
+  document.querySelectorAll('#page-national .htab').forEach(b=>b.classList.remove('on'));
+  btn.classList.add('on');
+  renderNational();
+}
+
+
+function filterNatByType(entries){
+  if(natFilter==='all') return entries;
+  if(natFilter==='missiles') return entries.filter(e=>e.cat==='1'||e.cat==='5');
+  if(natFilter==='uav')      return entries.filter(e=>e.cat==='2');
+  return entries.filter(e=>e.cat!=='1'&&e.cat!=='2'&&e.cat!=='5');
+}
+
+function renderNational(){
+  const el = document.getElementById('nat-list');
+  const now = new Date();
+
+  // Show history entries NOT in my city, last 24h
+  const entries = hist.filter(h=>{
+    const hr = (now - h.t) / 3600000;
+    if(hr > 24) return false;
+    // Exclude entries that are entirely in my city
+    if(!myCity) return true;
+    const cities = h.cities || [];
+    const allMine = cities.every(c => isMyArea(c));
+    return !allMine;
+  });
+
+  const filtered = filterNatByType(entries);
+
+  if(!filtered.length){
+    el.innerHTML='<div class="empty">✅<br>אין התרעות ב-24 שעות האחרונות<br><span style="font-size:11px">מחוץ לאזור שלך</span></div>';
+    return;
+  }
+
+  el.innerHTML = filtered.map(h=>{
+    const T = h.T || TYPES['1'];
+    // Split cities: mine vs others
+    const mine   = (h.cities||[]).filter(c=>isMyArea(c));
+    const others = (h.cities||[]).filter(c=>!isMyArea(c));
+    const ts = h.t instanceof Date && !isNaN(h.t)
+      ? h.t.toLocaleTimeString('he-IL',{hour:'2-digit',minute:'2-digit'})+' · '+
+        h.t.toLocaleDateString('he-IL',{day:'2-digit',month:'2-digit'})
+      : '—';
+
+    const cityHtml = [
+      ...others.slice(0,10).map(c=>`<div class="city-chip">${c}</div>`),
+      ...(mine.length?mine.map(c=>`<div class="city-chip user">📍 ${c}</div>`):[]),
+      ...(others.length>10?[`<div class="city-chip">+${others.length-10}</div>`]:[])
+    ].join('');
+
+    return `<div class="h-entry" style="border-color:rgba(255,149,0,.12)">
+      <div class="h-dot-wrap"><div class="h-dot" style="color:${T.col}"></div></div>
+      <div class="h-body">
+        <div class="h-type" style="color:${T.col}">${T.ic} ${T.n}</div>
+        <div style="display:flex;flex-wrap:wrap;gap:5px;margin:6px 0">${cityHtml}</div>
+        <div class="h-time">${ts} · ${(h.cities||[]).length} יישובים</div>
+      </div>
+    </div>`;
+  }).join('');
+}
+
+function updateNationalLiveStrip(alertData){
+  const strip = document.getElementById('nat-live-strip');
+  if(!alertData || !alertData.data || !alertData.data.length){
+    if(strip) strip.style.display='none';
+    document.getElementById('nb-nat-badge').classList.remove('show');
+    return;
+  }
+
+  const cities = alertData.data;
+  // Only show strip if there are cities NOT in my area
+  const otherCities = myCity ? cities.filter(c=>!isMyArea(c)) : cities;
+  if(!otherCities.length){ strip.style.display='none'; return; }
+
+  const T = TYPES[String(alertData.cat||'1')]||TYPES['1'];
+  strip.style.display = 'block';
+  document.getElementById('nat-live-type').innerHTML = `${T.ic} <span style="color:${T.col}">${T.n}</span>`;
+  document.getElementById('nat-live-cities').innerHTML =
+    otherCities.slice(0,12).map(c=>`<div class="city-chip">${c}</div>`).join('') +
+    (otherCities.length>12?`<div class="city-chip">+${otherCities.length-12}</div>`:'');
+
+  // Badge on nav
+  document.getElementById('nb-nat-badge').classList.add('show');
+}
+
 function computeStats(){
   const now=new Date();
   let total=0, cities=new Set(), last=null;
@@ -1466,7 +1821,7 @@ async function loadHist(){
       cities: Array.isArray(h.data)?h.data:
               typeof h.data==='string'?h.data.split(',').map(s=>s.trim()):[]
     }));
-    renderHist(); computeStats();
+    renderHist(); computeStats(); renderNational();
   }catch(e){ /* silent */ }
 }
 
@@ -1502,20 +1857,58 @@ async function reverseGeocode(lat,lng){
 ══════════════════════════════════════════════════════ */
 function playAlertSound(){
   try{
-    const ctx=new AudioContext();
-    function beep(f,t,d){
-      const o=ctx.createOscillator();
-      const g=ctx.createGain();
+    const vol = getVolume();
+    if(vol === 0) return;
+    const ctx = new AudioContext();
+    const now = ctx.currentTime;
+
+    function tone(freq, start, dur, type='sine', gainVal){
+      const o = ctx.createOscillator();
+      const g = ctx.createGain();
       o.connect(g); g.connect(ctx.destination);
-      o.frequency.value=f;
-      o.type='sawtooth';
-      g.gain.setValueAtTime(0,t);
-      g.gain.linearRampToValueAtTime(.3,t+.02);
-      g.gain.linearRampToValueAtTime(0,t+d);
-      o.start(t); o.stop(t+d);
+      o.frequency.value = freq;
+      o.type = type;
+      g.gain.setValueAtTime(0, start);
+      g.gain.linearRampToValueAtTime(vol * (gainVal||0.35), start + 0.02);
+      g.gain.linearRampToValueAtTime(0, start + dur - 0.02);
+      o.start(start); o.stop(start + dur);
     }
-    const now=ctx.currentTime;
-    [880,660,880,660,880,660].forEach((f,i)=>beep(f,now+i*.25,.2));
+
+    function sweep(f1, f2, start, dur){
+      const o = ctx.createOscillator();
+      const g = ctx.createGain();
+      o.connect(g); g.connect(ctx.destination);
+      o.frequency.setValueAtTime(f1, start);
+      o.frequency.linearRampToValueAtTime(f2, start + dur);
+      o.type = 'sawtooth';
+      g.gain.setValueAtTime(vol * 0.3, start);
+      g.gain.linearRampToValueAtTime(0, start + dur);
+      o.start(start); o.stop(start + dur);
+    }
+
+    if(currentSoundType === 'siren'){
+      // עולה ויורד — סירנת אזעקה
+      for(let i=0;i<3;i++){
+        sweep(400, 1200, now + i*0.7, 0.35);
+        sweep(1200, 400, now + i*0.7 + 0.35, 0.35);
+      }
+    } else if(currentSoundType === 'beep'){
+      // ביפים קצרים
+      [0, 0.25, 0.5, 0.75, 1.0, 1.25].forEach(t =>
+        tone(880, now + t, 0.15, 'square', 0.3)
+      );
+    } else if(currentSoundType === 'alarm'){
+      // 3 פעמונים
+      [0, 0.5, 1.0].forEach(t => {
+        tone(1047, now + t,       0.3, 'sine', 0.4);
+        tone(1319, now + t + 0.1, 0.2, 'sine', 0.2);
+      });
+    } else if(currentSoundType === 'pulse'){
+      // פולסים מהירים
+      for(let i=0;i<8;i++){
+        tone(660, now + i*0.18, 0.12, 'triangle', 0.35);
+      }
+    }
   }catch(e){}
 }
 
@@ -1525,7 +1918,13 @@ function playAlertSound(){
 function toggleNotif(){
   if(document.getElementById('ntf-tog').checked){
     Notification.requestPermission().then(p=>{
-      if(p!=='granted') document.getElementById('ntf-tog').checked=false;
+      const sub=document.getElementById('ntf-sub');
+      if(p==='granted'){
+        if(sub) sub.textContent='פעיל ✅';
+      } else {
+        document.getElementById('ntf-tog').checked=false;
+        if(sub) sub.textContent=p==='denied'?'חסום בדפדפן':'לחץ להפעלה';
+      }
     });
   }
   saveCfg();
@@ -1555,21 +1954,98 @@ async function testConn(){
   }
 }
 
+/* ══ VOLUME + SOUND TYPE ══ */
+let currentVol = 80;    // 0-100
+let currentSoundType = 'siren';
+
+function adjVol(delta){
+  currentVol = Math.max(0, Math.min(100, currentVol + delta));
+  updateVolUI();
+  saveCfg();
+}
+function updateVolUI(){
+  const lbl = document.getElementById('vol-label');
+  const bar = document.getElementById('vol-bar');
+  const ico = document.getElementById('vol-ico');
+  if(lbl) lbl.textContent = currentVol + '%';
+  if(bar) bar.style.width = currentVol + '%';
+  if(ico) ico.textContent = currentVol===0 ? '🔇' : currentVol<40 ? '🔈' : currentVol<75 ? '🔉' : '🔊';
+}
+function getVolume(){ return currentVol / 100; }
+
+function setSoundType(type, btn){
+  currentSoundType = type;
+  document.querySelectorAll('.snd-type-btn').forEach(b=>b.classList.remove('on'));
+  btn.classList.add('on');
+  const labels = {siren:'סירנה', beep:'ביפ', alarm:'אזעקה', pulse:'פולס'};
+  const lbl = document.getElementById('snd-type-label');
+  if(lbl) lbl.textContent = labels[type]||type;
+  saveCfg();
+  testSound(); // preview immediately
+}
+
+function testSound(){ playAlertSound(); }
+
+function manualRefresh(){
+  const spin = document.getElementById('fetch-spin');
+  if(spin){ spin.style.opacity='1'; setTimeout(()=>spin.style.opacity='0', 1500); }
+  poll();
+  loadHist();
+}
+
+function showFetchSpin(){
+  const spin = document.getElementById('fetch-spin');
+  if(spin) spin.style.opacity='1';
+}
+function hideFetchSpin(){
+  const spin = document.getElementById('fetch-spin');
+  if(spin) spin.style.opacity='0';
+}
+
+function updateDataIndicator(ok, githubTime){
+  const dot=document.getElementById('data-live-dot');
+  const now=new Date();
+  if(dot) dot.style.background=ok?'var(--live)':'var(--red)';
+  const diStatus=document.getElementById('di-status');
+  const diLast=document.getElementById('di-last');
+  const diGithub=document.getElementById('di-github');
+  if(diStatus){ diStatus.textContent=ok?'✅ מחובר':'❌ שגיאה'; diStatus.style.color=ok?'var(--live)':'var(--red)'; }
+  if(diLast) diLast.textContent=now.toLocaleTimeString('he-IL');
+  if(diGithub&&githubTime) diGithub.textContent=githubTime;
+}
+
 /* ══════════════════════════════════════════════════════
    SETTINGS PERSIST
 ══════════════════════════════════════════════════════ */
 function saveCfg(){
   try{
-    localStorage.setItem('mg3_s',document.getElementById('snd-tog').checked);
-    localStorage.setItem('mg3_n',document.getElementById('ntf-tog').checked);
-    localStorage.setItem('mg3_iv',document.getElementById('iv-sel').value);
+    localStorage.setItem('mg3_s',  document.getElementById('snd-tog').checked);
+    localStorage.setItem('mg3_n',  document.getElementById('ntf-tog').checked);
+    localStorage.setItem('mg3_iv', document.getElementById('iv-sel').value);
+    localStorage.setItem('mg3_vol', currentVol);
+    localStorage.setItem('mg3_snd', currentSoundType);
   }catch(e){}
 }
 function loadCfg(){
   try{
-    const s=localStorage.getItem('mg3_s'); if(s!==null) document.getElementById('snd-tog').checked=s==='true';
-    const n=localStorage.getItem('mg3_n'); if(n!==null) document.getElementById('ntf-tog').checked=n==='true';
+    const s=localStorage.getItem('mg3_s');   if(s!==null) document.getElementById('snd-tog').checked=s==='true';
+    const n=localStorage.getItem('mg3_n');   if(n!==null) document.getElementById('ntf-tog').checked=n==='true';
     const iv=localStorage.getItem('mg3_iv'); if(iv) document.getElementById('iv-sel').value=iv;
+    const vol=localStorage.getItem('mg3_vol');
+    if(vol){ currentVol=parseInt(vol); updateVolUI(); }
+    const snd=localStorage.getItem('mg3_snd');
+    if(snd){
+      currentSoundType=snd;
+      document.querySelectorAll('.snd-type-btn').forEach(b=>{
+        b.classList.toggle('on', b.dataset.type===snd);
+      });
+      const labels={siren:'סירנה',beep:'ביפ',alarm:'אזעקה',pulse:'פולס'};
+      const lbl=document.getElementById('snd-type-label');
+      if(lbl) lbl.textContent=labels[snd]||snd;
+    }
+    const perm=Notification?.permission;
+    const ntfSub=document.getElementById('ntf-sub');
+    if(ntfSub) ntfSub.textContent=perm==='granted'?'פעיל ✅':perm==='denied'?'חסום בדפדפן':'לחץ להפעלה';
   }catch(e){}
 }
 
@@ -1633,6 +2109,8 @@ ${histSummary||'אין היסטוריה'}
       method:'POST',
       headers:{
         'Content-Type':'application/json',
+        'x-api-key': key,
+        'anthropic-version': '2023-06-01',
         'anthropic-dangerous-direct-browser-access':'true'
       },
       body:JSON.stringify({
@@ -1668,6 +2146,7 @@ function registerSW(){
 ══════════════════════════════════════════════════════ */
 async function init(){
   loadCfg();
+  loadWatchAreas();
   initAiDisplay();
   registerSW();
   if(navigator.geolocation&&navigator.permissions){

@@ -360,14 +360,10 @@ body {
 
 /* GPS / My City */
 #my-city-row {
-  width: 100%;
-  background: var(--panel);
-  border: 1px solid var(--border);
-  border-radius: var(--r);
-  padding: 14px 16px;
   display: flex;
   align-items: center;
   gap: 12px;
+  padding: 14px 16px;
 }
 #gps-icon {
   width: 36px; height: 36px;
@@ -378,10 +374,11 @@ body {
   font-size: 18px;
   flex-shrink: 0;
 }
-#city-name { font-size: 15px; font-weight: 700; }
-#city-sub  { font-size: 11px; color: var(--text3); }
+#city-name { font-size: 14px; font-weight: 700; }
+#city-sub  { font-size: 11px; color: var(--text3); margin-top: 2px; }
 #gps-btn {
   margin-right: auto;
+  margin-left: 0;
   background: rgba(0,200,255,.08);
   border: 1px solid rgba(0,200,255,.2);
   border-radius: 20px;
@@ -391,7 +388,9 @@ body {
   font-weight: 600;
   padding: 6px 14px;
   cursor: pointer;
-  transition: all .2s;
+  white-space: nowrap;
+  flex-shrink: 0;
+  align-self: center;
 }
 #gps-btn:active { opacity: .7; }
 
@@ -1016,49 +1015,43 @@ body {
       </div>
 
       <!-- Watch Areas Card -->
-      <div id="watch-card" style="
-        width:100%;background:var(--panel);border:1px solid var(--border);
-        border-radius:var(--r);padding:0;overflow:hidden">
+      <div id="watch-card" style="width:100%;background:var(--panel);border:1px solid var(--border);border-radius:var(--r);overflow:hidden">
 
-        <!-- Card header -->
-        <div style="padding:12px 16px 10px;border-bottom:1px solid var(--border);
-          display:flex;align-items:center;gap:8px">
-          <span style="font-family:var(--raj);font-size:12px;font-weight:700;
-            letter-spacing:2px;color:var(--text3)">📌 אזורים למעקב</span>
-          <span style="font-size:10px;color:var(--text3);margin-right:auto">
-            התרעה תופיע גם עבור אזורים אלו
-          </span>
+        <!-- Header -->
+        <div style="padding:11px 16px;border-bottom:1px solid var(--border);display:flex;align-items:center;justify-content:space-between">
+          <span style="font-family:var(--raj);font-size:11px;font-weight:700;letter-spacing:2px;color:var(--text3)">📌 אזורים למעקב</span>
+          <span style="font-size:10px;color:var(--text3)">התרעה תופיע גם עבורם</span>
         </div>
 
-        <!-- Primary city (GPS) -->
-        <div id="my-city-row" style="border-bottom:1px solid var(--border)">
+        <!-- GPS row -->
+        <div id="my-city-row" style="border-bottom:1px solid var(--border);display:flex;align-items:center;gap:10px;padding:13px 16px;justify-content:space-between">
           <div id="gps-icon">📍</div>
-          <div>
-            <div id="city-name">מיקום לא ידוע</div>
-            <div id="city-sub">מיקום GPS</div>
+          <div style="flex:1;min-width:0">
+            <div id="city-name" style="font-size:14px;font-weight:700">מיקום לא ידוע</div>
+            <div id="city-sub" style="font-size:11px;color:var(--text3);margin-top:2px">לחץ זהה GPS</div>
           </div>
           <button id="gps-btn" onclick="detectGps()">זהה GPS</button>
         </div>
 
-        <!-- Watch areas list -->
-        <div id="watch-list" style="display:none;padding:10px 14px 4px"></div>
+        <!-- Added areas list -->
+        <div id="watch-list" style="display:none;padding:8px 14px 4px;flex-wrap:wrap;gap:6px"></div>
 
-        <!-- Add area row -->
-        <div style="padding:10px 14px 12px;display:flex;gap:8px;align-items:center">
-          <input id="area-inp" type="text" placeholder="הוסף עיר / אזור..."
+        <!-- Add input row -->
+        <div style="padding:10px 14px 12px;display:flex;gap:8px">
+          <input id="area-inp" type="text"
+            placeholder="חפש עיר — לדוגמה: תל אביב"
             list="cities-datalist"
-            style="flex:1;background:rgba(0,0,0,.25);border:1px solid var(--border-hi);
+            style="flex:1;min-width:0;background:rgba(0,0,0,.3);border:1px solid var(--border-hi);
               border-radius:10px;color:var(--text);font-family:var(--heb);font-size:13px;
-              padding:9px 12px;outline:none;-webkit-appearance:none"
-            onkeydown="if(event.key==='Enter')addWatchArea()">
+              padding:9px 12px;outline:none;-webkit-appearance:none;direction:rtl"
+            onkeydown="if(event.key==='Enter'){addWatchArea();event.preventDefault();}">
           <button onclick="addWatchArea()" style="
             background:rgba(0,229,160,.1);border:1px solid rgba(0,229,160,.25);
             border-radius:10px;color:var(--live);font-family:var(--heb);
-            font-size:13px;font-weight:700;padding:9px 16px;cursor:pointer;
-            white-space:nowrap;flex-shrink:0">+ הוסף</button>
+            font-size:14px;font-weight:700;padding:9px 18px;cursor:pointer;
+            flex-shrink:0;white-space:nowrap">+ הוסף</button>
         </div>
 
-        <!-- Common cities datalist -->
         <datalist id="cities-datalist">
           <option value="תל אביב"><option value="ירושלים"><option value="חיפה">
           <option value="באר שבע"><option value="אשדוד"><option value="אשקלון">
@@ -1070,20 +1063,17 @@ body {
           <option value="עכו"><option value="נהריה"><option value="טבריה">
           <option value="צפת"><option value="קריית שמונה"><option value="נצרת">
           <option value="אילת"><option value="דימונה"><option value="אופקים">
-          <option value="נתיבות"><option value="סדרות"><option value="שדרות">
+          <option value="נתיבות"><option value="שדרות"><option value="סדרות">
           <option value="יבנה"><option value="גדרה"><option value="קריית גת">
           <option value="בית שמש"><option value="מעלה אדומים"><option value="אלעד">
-          <option value="ביתר עילית"><option value="מודיעין עילית"><option value="ערד">
+          <option value="ביתר עילית"><option value="חדרה"><option value="עפולה">
           <option value="קריית ביאליק"><option value="קריית ים"><option value="קריית מוצקין">
-          <option value="קריית אתא"><option value="קריית מלאכי"><option value="קריית ארבע">
-          <option value="חדרה"><option value="זכרון יעקב"><option value="עפולה">
-          <option value="בית שאן"><option value="אשתאול"><option value="מגדל העמק">
-          <option value="עומר"><option value="מיתר"><option value="לקיה">
-          <option value="רהט"><option value="כסיפה"><option value="חורה">
+          <option value="קריית אתא"><option value="קריית מלאכי"><option value="ערד">
+          <option value="מגדל העמק"><option value="עומר"><option value="רהט">
           <option value="נחל עוז"><option value="כפר עזה"><option value="בארי">
           <option value="ניר עוז"><option value="רעים"><option value="הולית">
-          <option value="יד מרדכי"><option value="גן יבנה"><option value="גדרות">
-          <option value="זיקים"><option value="נירים"><option value="מפלסים">
+          <option value="יד מרדכי"><option value="גן יבנה"><option value="זיקים">
+          <option value="נירים"><option value="מפלסים"><option value="ספיר">
         </datalist>
       </div>
     </div>
@@ -1139,22 +1129,63 @@ body {
 
     <!-- ── AI PAGE ── -->
     <div class="page" id="page-ai">
-      <div class="page-title">🧠 >✦ &nbsp;ניתוח Claude AI<nbsp;ניתוח Claude AI</div>
+      <div style="padding:16px;display:flex;flex-direction:column;gap:14px;min-height:100%">
 
-      <div id="ai-key-card">
-        <div class="card-title">ANTHROPIC API KEY</div>
-        <div class="input-row">
-          <input class="key-input" id="api-inp" type="password" placeholder="sk-ant-api03-..." autocomplete="off" oninput="onKeyInput()">
-          <button class="btn-sm" onclick="saveKey()">שמור</button>
-        </div>
-        <div id="ai-status"></div>
-      </div>
+        <div class="page-title">🧠 &nbsp;ניתוח Claude AI</div>
 
-      <div id="ai-chat">
-        <div id="ai-response" style="color:var(--text3);font-size:13px">
-          הזן מפתח API לקבלת ניתוח אינטליגנטי של מצב ביטחוני, דפוסי התרעות ומדיניות מקלט.
+        <!-- API Key -->
+        <div style="background:var(--panel);border:1px solid var(--border);border-radius:var(--r);padding:16px">
+          <div style="font-family:var(--raj);font-size:10px;font-weight:700;letter-spacing:2.5px;color:var(--text3);margin-bottom:12px">ANTHROPIC API KEY</div>
+          <div style="display:flex;gap:8px">
+            <input id="api-inp" type="password" placeholder="sk-ant-api03-..."
+              autocomplete="off" oninput="onKeyInput()"
+              style="flex:1;min-width:0;background:rgba(0,0,0,.4);
+                border:1px solid var(--border-hi);border-radius:10px;
+                color:var(--text);font-family:var(--mono);font-size:11px;
+                padding:11px 12px;outline:none;-webkit-appearance:none;
+                direction:ltr;text-align:left">
+            <button onclick="saveKey()" style="
+              flex-shrink:0;background:rgba(0,229,160,.1);
+              border:1px solid rgba(0,229,160,.25);border-radius:10px;
+              color:var(--live);font-family:var(--heb);font-size:14px;
+              font-weight:700;padding:0 18px;cursor:pointer">שמור</button>
+          </div>
+          <div id="ai-status" style="font-size:12px;color:var(--text3);margin-top:8px"></div>
         </div>
-        <button id="ai-analyze-btn" onclick="runAnalysis()" disabled>🧠 נתח מצב עכשווי</button>
+
+        <!-- Analyze btn -->
+        <button id="ai-analyze-btn" onclick="runAnalysis()" disabled style="
+          background:linear-gradient(135deg,rgba(0,229,160,.14),rgba(0,229,160,.04));
+          border:1px solid rgba(0,229,160,.3);border-radius:14px;
+          color:var(--live);font-family:var(--heb);font-size:16px;font-weight:700;
+          padding:16px;cursor:pointer;width:100%;
+          opacity:.4;transition:opacity .2s">
+          🧠 נתח מצב ביטחוני עכשווי
+        </button>
+
+        <!-- Response -->
+        <div style="background:var(--panel);border:1px solid var(--border);
+          border-radius:var(--r);padding:18px;flex:1">
+          <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:14px">
+            <div style="font-family:var(--raj);font-size:10px;font-weight:700;
+              letter-spacing:2.5px;color:var(--text3)">ANALYSIS OUTPUT</div>
+            <div id="ai-live-dot" style="width:7px;height:7px;border-radius:50%;
+              background:var(--text3);transition:background .3s"></div>
+          </div>
+          <div id="ai-response" style="font-size:14px;color:var(--text3);
+            line-height:1.85;direction:rtl;min-height:120px">
+            הזן מפתח Anthropic API ← לחץ נתח
+          </div>
+        </div>
+
+        <!-- Info -->
+        <div style="background:rgba(0,229,160,.04);border:1px solid rgba(0,229,160,.1);
+          border-radius:12px;padding:12px 16px;font-size:11px;color:var(--text3);
+          line-height:1.9;direction:rtl">
+          <strong style="color:var(--text2)">נשלח ל-Claude:</strong> מצב התרעות כעת · 20 התרעות אחרונות · שעה · עיר שלך<br>
+          <strong style="color:var(--text2)">Model:</strong> claude-haiku-4-5 · מהיר וחסכוני
+        </div>
+
       </div>
     </div>
 
@@ -1411,16 +1442,16 @@ function removeWatchArea(i){
 function renderWatchList(){
   const el = document.getElementById('watch-list');
   if(!watchAreas.length){ el.style.display='none'; return; }
-  el.style.display='block';
+  el.style.display='flex';
   el.innerHTML = watchAreas.map((a,i)=>`
     <div style="display:inline-flex;align-items:center;gap:5px;
       background:rgba(0,229,160,.08);border:1px solid rgba(0,229,160,.2);
-      border-radius:20px;padding:4px 10px 4px 12px;margin:0 5px 6px 0;
-      font-size:12px;font-family:var(--heb)">
+      border-radius:20px;padding:5px 8px 5px 12px;
+      font-size:12px;font-family:var(--heb);white-space:nowrap">
       <span style="color:var(--live)">📌 ${a}</span>
       <button onclick="removeWatchArea(${i})" style="
-        background:none;border:none;color:var(--text3);font-size:14px;
-        cursor:pointer;padding:0 2px;line-height:1">×</button>
+        background:none;border:none;color:var(--text3);font-size:16px;line-height:1;
+        cursor:pointer;padding:0 2px;margin-right:2px" title="הסר">×</button>
     </div>`).join('');
 }
 
@@ -1810,19 +1841,36 @@ function computeStats(){
 }
 
 async function loadHist(){
+  const el = document.getElementById('hist-list');
   try{
-    const arr=await fetchLocal('history.json');
-    if(!Array.isArray(arr)||!arr.length) return;
-    hist=arr.slice(0,200).map(h=>({
-      id:   h.alertDate||h.time||Math.random(),
-      t:    new Date(h.alertDate||h.time||0),
-      cat:  String(h.category||'1'),
-      T:    TYPES[String(h.category||'1')]||TYPES['1'],
-      cities: Array.isArray(h.data)?h.data:
-              typeof h.data==='string'?h.data.split(',').map(s=>s.trim()):[]
-    }));
+    const raw = await fetchLocal('history.json');
+
+    // Handle empty
+    if(!raw || (Array.isArray(raw) && !raw.length)){
+      if(el) el.innerHTML='<div class="empty">📭<br>אין היסטוריה<br><span style="font-size:11px">GitHub Actions יצבור נתונים לאט לאט</span></div>';
+      return;
+    }
+
+    // oref returns array at top level
+    const arr = Array.isArray(raw) ? raw : (raw.data ? raw.data : []);
+    if(!arr.length) return;
+
+    hist = arr.slice(0,200).map(h=>({
+      id:     h.alertDate||h.time||Math.random(),
+      t:      new Date((h.alertDate||h.time||'').replace(' ','T')||0),
+      cat:    String(h.category||h.cat||'1'),
+      T:      TYPES[String(h.category||h.cat||'1')]||TYPES['1'],
+      cities: Array.isArray(h.data)   ? h.data :
+              typeof h.data==='string' ? h.data.split(',').map(s=>s.trim()).filter(Boolean) :
+              Array.isArray(h.cities)  ? h.cities : []
+    })).filter(h => h.cities.length > 0);
+
     renderHist(); computeStats(); renderNational();
-  }catch(e){ /* silent */ }
+
+  }catch(e){
+    console.warn('loadHist error:', e.message);
+    if(el) el.innerHTML=`<div class="empty">⚠️<br>שגיאה בטעינת היסטוריה<br><span style="font-size:11px;color:var(--text3)">${e.message}</span><br><br><span style="font-size:11px">בדוק שה-GitHub Action רץ בהצלחה</span></div>`;
+  }
 }
 
 /* ══════════════════════════════════════════════════════
@@ -2059,21 +2107,29 @@ function getApiKey(){ try{return localStorage.getItem('mg3_k')||''}catch(e){retu
 function saveKey(){
   const inp=document.getElementById('api-inp');
   const val=(inp.value||'').trim();
-  if(!val||val.includes('•')){ document.getElementById('ai-status').textContent='❌ מפתח לא תקין'; return; }
+  if(!val||val.includes('•')){
+    document.getElementById('ai-status').textContent='❌ מפתח לא תקין';
+    document.getElementById('ai-status').style.color='var(--red)';
+    return;
+  }
   localStorage.setItem('mg3_k',val);
-  inp.value=val.slice(0,14)+'•'.repeat(20);
-  document.getElementById('ai-status').textContent='✅ נשמר';
+  inp.value=val.slice(0,18)+'•'.repeat(16);
+  document.getElementById('ai-status').textContent='✅ מפתח נשמר';
   document.getElementById('ai-status').style.color='var(--live)';
-  document.getElementById('ai-analyze-btn').disabled=false;
+  const btn=document.getElementById('ai-analyze-btn');
+  btn.disabled=false;
+  btn.style.opacity='1';
 }
 
 function initAiDisplay(){
   const k=getApiKey();
   if(k){
-    document.getElementById('api-inp').value=k.slice(0,14)+'•'.repeat(20);
+    document.getElementById('api-inp').value=k.slice(0,18)+'•'.repeat(16);
     document.getElementById('ai-status').textContent='✅ מפתח שמור';
     document.getElementById('ai-status').style.color='var(--live)';
-    document.getElementById('ai-analyze-btn').disabled=false;
+    const btn=document.getElementById('ai-analyze-btn');
+    btn.disabled=false;
+    btn.style.opacity='1';
   }
 }
 
@@ -2082,7 +2138,9 @@ async function runAnalysis(){
   if(!key){ document.getElementById('ai-status').textContent='❌ חסר API key'; return; }
   const btn=document.getElementById('ai-analyze-btn');
   const resp=document.getElementById('ai-response');
+  const dot=document.getElementById('ai-live-dot');
   btn.disabled=true;
+  if(dot) dot.style.background='var(--amber)';
   resp.innerHTML='<div class="ai-thinking"><span></span><span></span><span></span></div>';
 
   const now=new Date();
@@ -2122,9 +2180,13 @@ ${histSummary||'אין היסטוריה'}
     if(!r.ok) throw new Error('API error '+r.status);
     const data=await r.json();
     const text=data.content?.find(b=>b.type==='text')?.text||'אין תשובה';
-    resp.innerHTML='<div style="white-space:pre-wrap;direction:rtl;font-size:13.5px;line-height:1.8;color:var(--text)">'+text+'</div>';
+    resp.innerHTML=text;
+    resp.style.color='var(--text)';
+    if(dot) dot.style.background='var(--live)';
   }catch(e){
-    resp.innerHTML='<span style="color:var(--text3);font-size:12px">⚠️ '+e.message+'</span>';
+    resp.innerHTML='⚠️ '+e.message;
+    resp.style.color='var(--red)';
+    if(dot) dot.style.background='var(--red)';
   }
   btn.disabled=false;
 }

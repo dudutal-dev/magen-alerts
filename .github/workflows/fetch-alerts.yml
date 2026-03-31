@@ -14,78 +14,27 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
-      - name: Fetch data
+      - name: Fetch active alerts
         run: |
-          # --- ALERTS (oref) ---
           curl -s --max-time 10 \
             -H "Referer: https://www.oref.org.il/" \
             -H "X-Requested-With: XMLHttpRequest" \
             -H "User-Agent: Mozilla/5.0" \
             "https://www.oref.org.il/WarningMessages/alert/alerts.json" \
-            > alerts_raw.txt 2>/dev/null || true
+            -o alerts_raw.txt || true
+          python3 parse_alerts.py
 
-          python3 -c "
-import json, sys
-try:
-    d = json.loads(open('alerts_raw.txt').read().strip('\xef\xbb\xbf'))
-    json.dump(d, open('alerts.json','w'), ensure_ascii=False)
-    print('oref alerts ok')
-except:
-    open('alerts.json','w').write('{}')
-    print('alerts fallback {}')
-"
-
-          # --- HISTORY (Tzofar - no CORS block) ---
+      - name: Fetch history
+        run: |
           curl -s --max-time 15 \
             -H "Accept: application/json" \
             "https://api.tzevaadom.co.il/alerts-history/" \
-            > hist_raw.txt 2>/dev/null || true
+            -o hist_raw.txt || true
+          python3 parse_history.py
 
-          python3 -c "
-import json, sys
-try:
-    d = json.loads(open('hist_raw.txt').read())
-    if isinstance(d, list):
-        json.dump(d, open('history.json','w'), ensure_ascii=False)
-        print(f'Tzofar history ok: {len(d)} entries')
-    else:
-        print('Tzofar returned non-list:', type(d))
-        raise Exception('not a list')
-except Exception as e:
-    print('Tzofar failed:', e)
-    # fallback: oref history
-    import subprocess
-    r = subprocess.run(['curl','-s','--max-time','15',
-        '-H','Referer: https://www.oref.org.il/',
-        '-H','X-Requested-With: XMLHttpRequest',
-        '-H','User-Agent: Mozilla/5.0',
-        'https://www.oref.org.il/WarningMessages/alert/History/AlertsHistory.json'],
-        capture_output=True, text=True)
-    try:
-        d2 = json.loads(r.stdout.strip('\xef\xbb\xbf'))
-        if isinstance(d2, list):
-            json.dump(d2, open('history.json','w'), ensure_ascii=False)
-            print(f'oref history ok: {len(d2)} entries')
-        else:
-            raise Exception('oref also not list')
-    except Exception as e2:
-        print('oref history also failed:', e2)
-        print('keeping existing history.json')
-"
-
-          # --- TIMESTAMP ---
-          python3 -c "
-import json
-from datetime import datetime, timezone
-count = 0
-try:
-    count = len(json.load(open('history.json')))
-except:
-    pass
-meta = {'updated': datetime.now(timezone.utc).strftime('%Y-%m-%dT%H:%M:%SZ'), 'count': count}
-json.dump(meta, open('meta.json','w'))
-print(f'meta: {meta}')
-"
+      - name: Timestamp
+        run: |
+          python3 make_meta.py
 
       - name: Commit
         run: |

@@ -1,17 +1,17 @@
 <!DOCTYPE html>
-<!-- saved from url=(0046)file:///C:/Users/Doron/Downloads/index_21.html -->
-<html lang="he" dir="rtl"><head><meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
-
+<html lang="he" dir="rtl">
+<head>
+<meta charset="UTF-8">
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
 <meta name="theme-color" content="#030608">
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
 <meta name="apple-mobile-web-app-title" content="מגן">
-<link rel="apple-touch-icon" href="file:///C:/Users/Doron/Downloads/icon.svg">
-<link rel="icon" type="image/svg+xml" href="file:///C:/Users/Doron/Downloads/icon.svg">
-<link rel="manifest" href="file:///C:/Users/Doron/Downloads/manifest.json">
+<link rel="apple-touch-icon" href="icon.svg">
+<link rel="icon" type="image/svg+xml" href="icon.svg">
+<link rel="manifest" href="manifest.json">
 <title>מגן — פיקוד העורף</title>
-<link href="./index_files/css2" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Rajdhani:wght@600;700&family=Heebo:wght@400;500;700&family=Share+Tech+Mono&display=swap" rel="stylesheet">
 <style>
 :root {
   --void:#030608; --panel:#0d1520; --surface:#0a1018;
@@ -278,8 +278,8 @@ input[type=range]{width:100%;accent-color:var(--live);height:4px;cursor:pointer}
   <div style="display:flex;align-items:center;gap:8px">
     <button id="refresh-btn" onclick="manualRefresh()">↻ רענן</button>
     <div id="spill">
-      <div class="dot on" id="dot"></div>
-      <span id="stxt">LIVE</span>
+      <div class="dot wait" id="dot"></div>
+      <span id="stxt">מתחבר</span>
     </div>
   </div>
 </div>
@@ -300,7 +300,7 @@ input[type=range]{width:100%;accent-color:var(--live);height:4px;cursor:pointer}
     </div>
   </div>
 
-  <div id="ticker">22:51:01 · GitHub: —</div>
+  <div id="ticker">טוען...</div>
 
   <div id="al-banner">
     <div id="al-type"><div id="al-ic">🚀</div><div id="al-title">ירי רקטות</div></div>
@@ -333,34 +333,35 @@ input[type=range]{width:100%;accent-color:var(--live);height:4px;cursor:pointer}
       <button id="gps-btn" onclick="doGps()">זהה GPS</button>
     </div>
 
-    <div id="wlist" style="display: none;"></div>
+    <div id="wlist"></div>
 
     <!-- ADD CITY ROW -->
     <div style="padding:10px 14px 13px;border-top:1px solid var(--border)">
       <div style="font-size:10px;color:var(--text3);margin-bottom:7px">➕ הוסף יישוב להתרעה:</div>
       <div id="wadd">
-        <input id="winp" type="text" placeholder="שם עיר / יישוב..." list="cdl" onkeydown="if(event.key===&#39;Enter&#39;){addArea();event.preventDefault()}">
+        <input id="winp" type="text" placeholder="שם עיר / יישוב..." list="cdl"
+          onkeydown="if(event.key==='Enter'){addArea();event.preventDefault()}">
         <button id="wadd-btn" onclick="addArea()">+ הוסף</button>
       </div>
     </div>
 
     <datalist id="cdl">
-      <option value="תל אביב"></option><option value="ירושלים"></option><option value="חיפה">
-      </option><option value="באר שבע"></option><option value="אשדוד"></option><option value="אשקלון">
-      </option><option value="רחובות"></option><option value="פתח תקווה"></option><option value="נתניה">
-      </option><option value="ראשון לציון"></option><option value="הרצליה"></option><option value="רעננה">
-      </option><option value="כפר סבא"></option><option value="רמת גן"></option><option value="חולון">
-      </option><option value="בת ים"></option><option value="בני ברק"></option><option value="מודיעין">
-      </option><option value="עכו"></option><option value="נהריה"></option><option value="טבריה">
-      </option><option value="צפת"></option><option value="קריית שמונה"></option><option value="נצרת">
-      </option><option value="אילת"></option><option value="דימונה"></option><option value="אופקים">
-      </option><option value="נתיבות"></option><option value="שדרות"></option><option value="סדרות">
-      </option><option value="יבנה"></option><option value="קריית גת"></option><option value="בית שמש">
-      </option><option value="חדרה"></option><option value="עפולה"></option><option value="עומר">
-      </option><option value="נחל עוז"></option><option value="כפר עזה"></option><option value="בארי">
-      </option><option value="ניר עוז"></option><option value="רעים"></option><option value="נירים">
-      </option><option value="יד מרדכי"></option><option value="גן יבנה"></option><option value="זיקים">
-    </option></datalist>
+      <option value="תל אביב"><option value="ירושלים"><option value="חיפה">
+      <option value="באר שבע"><option value="אשדוד"><option value="אשקלון">
+      <option value="רחובות"><option value="פתח תקווה"><option value="נתניה">
+      <option value="ראשון לציון"><option value="הרצליה"><option value="רעננה">
+      <option value="כפר סבא"><option value="רמת גן"><option value="חולון">
+      <option value="בת ים"><option value="בני ברק"><option value="מודיעין">
+      <option value="עכו"><option value="נהריה"><option value="טבריה">
+      <option value="צפת"><option value="קריית שמונה"><option value="נצרת">
+      <option value="אילת"><option value="דימונה"><option value="אופקים">
+      <option value="נתיבות"><option value="שדרות"><option value="סדרות">
+      <option value="יבנה"><option value="קריית גת"><option value="בית שמש">
+      <option value="חדרה"><option value="עפולה"><option value="עומר">
+      <option value="נחל עוז"><option value="כפר עזה"><option value="בארי">
+      <option value="ניר עוז"><option value="רעים"><option value="נירים">
+      <option value="יד מרדכי"><option value="גן יבנה"><option value="זיקים">
+    </datalist>
   </div>
 </div>
 
@@ -381,10 +382,10 @@ input[type=range]{width:100%;accent-color:var(--live);height:4px;cursor:pointer}
     <div id="nat-cities" style="display:flex;flex-wrap:wrap;gap:5px"></div>
   </div>
   <div class="tabs">
-    <button class="tab on" onclick="setNF(&#39;all&#39;,this)">הכל</button>
-    <button class="tab" onclick="setNF(&#39;mis&#39;,this)">🚀 רקטות</button>
-    <button class="tab" onclick="setNF(&#39;uav&#39;,this)">✈️ כלי טיס</button>
-    <button class="tab" onclick="setNF(&#39;oth&#39;,this)">⚠️ אחר</button>
+    <button class="tab on" onclick="setNF('all',this)">הכל</button>
+    <button class="tab" onclick="setNF('mis',this)">🚀 רקטות</button>
+    <button class="tab" onclick="setNF('uav',this)">✈️ כלי טיס</button>
+    <button class="tab" onclick="setNF('oth',this)">⚠️ אחר</button>
   </div>
   <div id="nlist"><div class="empty">⏳<br>טוען...</div></div>
 </div>
@@ -393,11 +394,11 @@ input[type=range]{width:100%;accent-color:var(--live);height:4px;cursor:pointer}
 <div class="page" id="page-hist">
   <div class="pg-title">📋 היסטוריית התרעות</div>
   <div class="tabs">
-    <button class="tab on" onclick="setHF(&#39;24h&#39;,this)">24 שעות</button>
-    <button class="tab" onclick="setHF(&#39;48h&#39;,this)">48 שעות</button>
-    <button class="tab" onclick="setHF(&#39;all&#39;,this)">הכל</button>
+    <button class="tab on" onclick="setHF('24h',this)">24 שעות</button>
+    <button class="tab" onclick="setHF('48h',this)">48 שעות</button>
+    <button class="tab" onclick="setHF('all',this)">הכל</button>
   </div>
-  <div id="hlist"><div class="empty">⚠️ Failed to fetch<br><span style="font-size:10px;color:var(--text3)">בדוק שהקובץ history.json קיים</span></div></div>
+  <div id="hlist"><div class="empty">⏳<br>טוען...</div></div>
 </div>
 
 <!-- AI -->
@@ -413,7 +414,7 @@ input[type=range]{width:100%;accent-color:var(--live);height:4px;cursor:pointer}
       <div id="ai-dot" style="width:7px;height:7px;border-radius:50%;
         background:var(--text3);transition:background .3s"></div>
     </div>
-    <button id="ai-btn" onclick="doAi()" disabled="" style="
+    <button id="ai-btn" onclick="doAi()" disabled style="
       background:linear-gradient(135deg,rgba(0,229,160,.16),rgba(0,229,160,.05));
       border:1px solid rgba(0,229,160,.3);border-radius:10px;
       color:var(--live);font-family:var(--heb);font-size:14px;font-weight:700;
@@ -425,7 +426,7 @@ input[type=range]{width:100%;accent-color:var(--live);height:4px;cursor:pointer}
   <!-- Status line -->
   <div id="ai-status-bar" style="padding:6px 14px;font-size:11px;color:var(--text3);
     font-family:var(--mono);border-bottom:1px solid var(--border);
-    background:rgba(3,6,8,.6);min-height:28px">⚙️ הגדר מפתח API בהגדרות תחילה</div>
+    background:rgba(3,6,8,.6);min-height:28px"></div>
 
   <!-- Scrollable output -->
   <div style="flex:1;overflow-y:auto;-webkit-overflow-scrolling:touch;padding:16px 14px">
@@ -438,7 +439,7 @@ input[type=range]{width:100%;accent-color:var(--live);height:4px;cursor:pointer}
       padding:11px 14px;font-size:11px;color:var(--text3);line-height:1.9">
       <strong style="color:var(--text2)">נשלח ל-Claude:</strong> מצב התרעות · היסטוריה · שעה · עיר שלך<br>
       <strong style="color:var(--text2)">Model:</strong> claude-haiku-4-5 · מהיר וחסכוני<br>
-      <strong style="color:var(--text2)">API Key:</strong> <span id="ai-key-status" style="color: var(--text3);">לא מוגדר — הגדר בהגדרות ⚙️</span>
+      <strong style="color:var(--text2)">API Key:</strong> <span id="ai-key-status">לא מוגדר — הגדר בהגדרות ⚙️</span>
     </div>
   </div>
 </div>
@@ -457,7 +458,9 @@ input[type=range]{width:100%;accent-color:var(--live);height:4px;cursor:pointer}
       </div>
     </div>
     <div style="display:flex;gap:7px;margin-bottom:8px">
-      <input id="ai-inp" type="password" placeholder="sk-ant-api03-..." autocomplete="off" oninput="aiInp()" style="flex:1;min-width:0;background:rgba(0,0,0,.35);
+      <input id="ai-inp" type="password" placeholder="sk-ant-api03-..."
+        autocomplete="off" oninput="aiInp()"
+        style="flex:1;min-width:0;background:rgba(0,0,0,.35);
           border:1px solid var(--border2);border-radius:9px;
           color:var(--text);font-family:var(--mono);font-size:11px;
           padding:10px 12px;outline:none;-webkit-appearance:none;direction:ltr;text-align:left">
@@ -475,7 +478,7 @@ input[type=range]{width:100%;accent-color:var(--live);height:4px;cursor:pointer}
         <div class="row-ico" style="background:rgba(255,149,0,.08)">🔊</div>
         <div><div class="row-t">צליל התרעה</div><div class="row-s">סירנה בהתרעה פעילה</div></div>
       </div>
-      <label class="tog"><input type="checkbox" id="snd" checked="" onchange="saveCfg()"><div class="tog-tr"></div></label>
+      <label class="tog"><input type="checkbox" id="snd" checked onchange="saveCfg()"><div class="tog-tr"></div></label>
     </div>
     <div class="row" style="flex-direction:column;align-items:flex-start;gap:10px">
       <div class="row-l">
@@ -483,7 +486,9 @@ input[type=range]{width:100%;accent-color:var(--live);height:4px;cursor:pointer}
         <div><div class="row-t">עוצמת קול</div><div class="row-s" id="vol-lbl">80%</div></div>
       </div>
       <div style="display:flex;align-items:center;gap:10px;width:100%;padding-right:44px">
-        <input type="range" id="vol" min="0" max="100" value="80" oninput="document.getElementById(&#39;vol-lbl&#39;).textContent=this.value+&#39;%&#39;" onchange="saveCfg()">
+        <input type="range" id="vol" min="0" max="100" value="80"
+          oninput="document.getElementById('vol-lbl').textContent=this.value+'%'"
+          onchange="saveCfg()">
         <button onclick="testSnd()" style="flex-shrink:0;background:rgba(255,149,0,.09);
           border:1px solid rgba(255,149,0,.22);border-radius:7px;color:var(--amber);
           font-family:var(--heb);font-size:12px;font-weight:700;padding:6px 12px;cursor:pointer">▶ בדוק</button>
@@ -503,7 +508,7 @@ input[type=range]{width:100%;accent-color:var(--live);height:4px;cursor:pointer}
       </div>
       <select class="sel" id="iv" onchange="saveCfg();startPoll()">
         <option value="5000">5 שנ'</option>
-        <option value="10000" selected="">10 שנ'</option>
+        <option value="10000" selected>10 שנ'</option>
         <option value="30000">30 שנ'</option>
       </select>
     </div>
@@ -524,11 +529,11 @@ input[type=range]{width:100%;accent-color:var(--live);height:4px;cursor:pointer}
         </div>
         <div style="display:flex;justify-content:space-between">
           <span style="color:var(--text3)">בדיקה אחרונה:</span>
-          <span id="di-last" style="color:var(--text2)">22:51:01</span>
+          <span id="di-last" style="color:var(--text2)">—</span>
         </div>
         <div style="display:flex;justify-content:space-between">
           <span style="color:var(--text3)">סטטוס:</span>
-          <span id="di-st" style="color:var(--live)">✅ מחובר</span>
+          <span id="di-st" style="color:var(--live)">—</span>
         </div>
       </div>
     </div>
@@ -553,11 +558,11 @@ input[type=range]{width:100%;accent-color:var(--live);height:4px;cursor:pointer}
 
 <!-- NAV -->
 <nav id="nav">
-  <button class="nb on" onclick="goPage(&#39;home&#39;,this)"><div class="ni">📡</div><div class="nl">RADAR</div><div class="nbadge" id="b-al"></div></button>
-  <button class="nb" onclick="goPage(&#39;nat&#39;,this)"><div class="ni">🗺️</div><div class="nl">ארצי</div><div class="nbadge" id="b-nat"></div></button>
-  <button class="nb" onclick="goPage(&#39;hist&#39;,this)"><div class="ni">📋</div><div class="nl">FEED</div></button>
-  <button class="nb" onclick="goPage(&#39;ai&#39;,this)"><div class="ni">🧠</div><div class="nl">AI</div></button>
-  <button class="nb" onclick="goPage(&#39;cfg&#39;,this)"><div class="ni">⚙️</div><div class="nl">CONFIG</div></button>
+  <button class="nb on" onclick="goPage('home',this)"><div class="ni">📡</div><div class="nl">RADAR</div><div class="nbadge" id="b-al"></div></button>
+  <button class="nb" onclick="goPage('nat',this)"><div class="ni">🗺️</div><div class="nl">ארצי</div><div class="nbadge" id="b-nat"></div></button>
+  <button class="nb" onclick="goPage('hist',this)"><div class="ni">📋</div><div class="nl">FEED</div></button>
+  <button class="nb" onclick="goPage('ai',this)"><div class="ni">🧠</div><div class="nl">AI</div></button>
+  <button class="nb" onclick="goPage('cfg',this)"><div class="ni">⚙️</div><div class="nl">CONFIG</div></button>
 </nav>
 
 </div><!-- end #app -->
@@ -569,8 +574,8 @@ input[type=range]{width:100%;accent-color:var(--live);height:4px;cursor:pointer}
   <div id="ov-title">ירי רקטות וטילים</div>
   <div id="ov-ring">
     <svg id="ov-svg" viewBox="0 0 120 120">
-      <circle id="ov-bg" cx="60" cy="60" r="52"></circle>
-      <circle id="ov-circ" cx="60" cy="60" r="52"></circle>
+      <circle id="ov-bg" cx="60" cy="60" r="52"/>
+      <circle id="ov-circ" cx="60" cy="60" r="52"/>
     </svg>
     <div id="ov-cd"><div id="ov-s">90</div><div id="ov-sl">שניות</div></div>
   </div>
@@ -624,25 +629,44 @@ async function poll(){
   try{
     const [aRes,mRes]=await Promise.allSettled([getJson('alerts.json'),getJson('meta.json')]);
     const now=new Date();
-    const meta=mRes.status==='fulfilled'?mRes.value:null;
-    const ghTime=meta?.updated?new Date(meta.updated).toLocaleTimeString('he-IL',{hour:'2-digit',minute:'2-digit'}):'—';
 
-    setSt('on','LIVE');
+    // Check if alerts.json actually loaded
+    if(aRes.status==='rejected'){
+      setSt('err','שגיאה');
+      document.getElementById('ticker').textContent='⚠️ '+aRes.reason.message+' — בדוק שהקבצים קיימים ב-GitHub';
+      document.getElementById('di-st').textContent='❌ '+aRes.reason.message;
+      document.getElementById('di-st').style.color='var(--red)';
+      return;
+    }
+
+    const meta=mRes.status==='fulfilled'?mRes.value:null;
+    const ghTime=meta?.updated
+      ? new Date(meta.updated).toLocaleTimeString('he-IL',{hour:'2-digit',minute:'2-digit'})
+      : '—';
+
+    // Check data freshness — warn if older than 3 minutes
+    const ageMin = meta?.updated
+      ? Math.round((Date.now()-new Date(meta.updated))/60000)
+      : null;
+    const fresh = ageMin===null || ageMin<3;
+
+    setSt(fresh?'on':'wait', fresh?'LIVE':'עדכון ישן');
     document.getElementById('ticker').textContent=
-      now.toLocaleTimeString('he-IL',{hour:'2-digit',minute:'2-digit',second:'2-digit'})+' · GitHub: '+ghTime;
+      now.toLocaleTimeString('he-IL',{hour:'2-digit',minute:'2-digit',second:'2-digit'})+
+      ' · GitHub: '+ghTime+
+      (ageMin!==null?' (לפני '+ageMin+'דק\')'  :'');
     document.getElementById('di-gh').textContent=ghTime;
     document.getElementById('di-last').textContent=now.toLocaleTimeString('he-IL');
-    document.getElementById('di-st').textContent='✅ מחובר';
-    document.getElementById('di-st').style.color='var(--live)';
+    document.getElementById('di-st').textContent=fresh?'✅ מחובר':'⚠️ נתונים ישנים — GitHub Actions פועל?';
+    document.getElementById('di-st').style.color=fresh?'var(--live)':'var(--amber)';
 
-    if(aRes.status==='fulfilled'){
-      const d=aRes.value;
-      updateNatStrip(d);
-      if(d&&d.data&&d.data.length){
-        const h=JSON.stringify(d.data)+d.cat;
-        if(h!==liveHash){liveHash=h;liveData=d;triggerAlert(d);}
-      } else {liveHash='';liveData=null;clearAlert();}
-    }
+    const d=aRes.value;
+    updateNatStrip(d);
+    if(d&&d.data&&d.data.length){
+      const h=JSON.stringify(d.data)+d.cat;
+      if(h!==liveHash){liveHash=h;liveData=d;triggerAlert(d);}
+    } else {liveHash='';liveData=null;clearAlert();}
+
   }catch(e){
     setSt('err','שגיאה');
     document.getElementById('ticker').textContent='⚠️ '+e.message;
@@ -1124,6 +1148,5 @@ async function init(){
 
 init();
 </script>
-
-
-</body></html>
+</body>
+</html>

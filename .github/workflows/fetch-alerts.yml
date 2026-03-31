@@ -14,42 +14,84 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
-      - name: Fetch active alerts
+      - name: Fetch active alerts (oref → Tzofar fallback)
         run: |
-          RESP=$(curl -s \
+          # Try oref first
+          RESP=$(curl -sf --max-time 10 \
             -H "Referer: https://www.oref.org.il/" \
             -H "X-Requested-With: XMLHttpRequest" \
-            -H "User-Agent: Mozilla/5.0" \
-            -H "Accept: application/json, text/plain, */*" \
-            --max-time 10 \
+            -H "User-Agent: Mozilla/5.0 (Windows NT 10.0; Win64; x64)" \
+            -H "Accept: application/json" \
             "https://www.oref.org.il/WarningMessages/alert/alerts.json" 2>/dev/null)
+
           if echo "$RESP" | python3 -c "import sys,json; json.load(sys.stdin)" 2>/dev/null; then
             echo "$RESP" > alerts.json
+            echo "✅ alerts from oref"
           else
-            echo "{}" > alerts.json
+            # Tzofar active alert endpoint
+            RESP2=$(curl -sf --max-time 10 \
+              "https://api.tzevaadom.co.il/notifications" 2>/dev/null)
+            if echo "$RESP2" | python3 -c "import sys,json; json.load(sys.stdin)" 2>/dev/null; then
+              # Convert Tzofar format to oref format
+              python3 << 'PYEOF'
+          import json, sys
+          raw = json.load(open('/dev/stdin'))
+          # Tzofar returns list of active alerts
+          if isinstance(raw, list) and len(raw) > 0:
+              first = raw[0]
+              out = {
+                  "id": str(first.get("time", "")),
+                  "cat": str(first.get("category", "1")),
+                  "title": first.get("threat", "ירי רקטות וטילים"),
+                  "data": [c.get("name", c) if isinstance(c, dict) else c for c in first.get("cities", [])]
+              }
+          else:
+              out = {}
+          json.dump(out, open("alerts.json", "w"), ensure_ascii=False)
+          PYEOF
+              echo "$RESP2" | python3 -
+              echo "✅ alerts from Tzofar"
+            else
+              echo "{}" > alerts.json
+              echo "⚠️ no active alerts data"
+            fi
           fi
 
-      - name: Fetch history
+      - name: Fetch history (Tzofar)
         run: |
-          RESP=$(curl -s \
-            -H "Referer: https://www.oref.org.il/" \
-            -H "X-Requested-With: XMLHttpRequest" \
-            -H "User-Agent: Mozilla/5.0" \
-            -H "Accept: application/json, text/plain, */*" \
-            --max-time 15 \
-            "https://www.oref.org.il/WarningMessages/alert/History/AlertsHistory.json" 2>/dev/null)
-          if echo "$RESP" | python3 -c "import sys,json; data=json.load(sys.stdin); assert isinstance(data,list)" 2>/dev/null; then
+          # Tzofar history API - open and accessible
+          RESP=$(curl -sf --max-time 20 \
+            -H "Accept: application/json" \
+            "https://api.tzevaadom.co.il/alerts-history/" 2>/dev/null)
+
+          if echo "$RESP" | python3 -c "import sys,json; d=json.load(sys.stdin); assert isinstance(d, list); print(f'Got {len(d)} alerts')" 2>/dev/null; then
             echo "$RESP" > history.json
+            echo "✅ history from Tzofar"
+          else
+            # Try oref history as fallback
+            RESP2=$(curl -sf --max-time 20 \
+              -H "Referer: https://www.oref.org.il/" \
+              -H "X-Requested-With: XMLHttpRequest" \
+              -H "User-Agent: Mozilla/5.0 (Windows NT 10.0; Win64; x64)" \
+              "https://www.oref.org.il/WarningMessages/alert/History/AlertsHistory.json" 2>/dev/null)
+            if echo "$RESP2" | python3 -c "import sys,json; d=json.load(sys.stdin); assert isinstance(d,list)" 2>/dev/null; then
+              echo "$RESP2" > history.json
+              echo "✅ history from oref"
+            else
+              echo "⚠️ history fetch failed, keeping existing"
+            fi
           fi
 
-      - name: Add timestamp
+      - name: Update timestamp
         run: |
-          echo "{\"updated\": \"$(date -u +%Y-%m-%dT%H:%M:%SZ)\"}" > meta.json
+          COUNT=$(python3 -c "import json; d=json.load(open('history.json')); print(len(d))" 2>/dev/null || echo "0")
+          echo "{\"updated\":\"$(date -u +%Y-%m-%dT%H:%M:%SZ)\",\"count\":$COUNT}" > meta.json
+          echo "📊 History entries: $COUNT"
 
-      - name: Commit and push
+      - name: Commit
         run: |
           git config user.name  "github-actions[bot]"
           git config user.email "github-actions[bot]@users.noreply.github.com"
           git add alerts.json history.json meta.json
-          git diff --staged --quiet || git commit -m "alerts $(date -u +%H:%M:%S)"
+          git commit -m "update $(date -u +%H:%M:%S)" --allow-empty
           git push

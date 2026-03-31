@@ -879,13 +879,17 @@ async function loadHist(){
     if(!Array.isArray(arr)||!arr.length){
       el.innerHTML='<div class="empty">📭<br>אין היסטוריה עדיין</div>';return;
     }
-    hist=arr.slice(0,200).map(h=>({
-      id:h.alertDate||Math.random(),
-      t:new Date((h.alertDate||'').replace(' ','T')||0),
-      cat:String(h.category||'1'),
-      T:T[String(h.category||'1')]||T['1'],
-      cities:Array.isArray(h.data)?h.data:typeof h.data==='string'?h.data.split(',').map(s=>s.trim()).filter(Boolean):[]
-    })).filter(h=>h.cities.length>0);
+    hist=arr.slice(0,200).map(h=>{
+      // Support both oref format (alertDate, category, data)
+      // and Tzofar format (time, category, cities)
+      const dateStr = h.alertDate||h.time||h.alerttime||'';
+      const t = dateStr ? new Date(dateStr.replace(' ','T')) : new Date(0);
+      const cat = String(h.category||h.cat||'1');
+      const cities = Array.isArray(h.cities) ? h.cities :
+                     Array.isArray(h.data)   ? h.data :
+                     typeof h.data==='string' ? h.data.split(',').map(s=>s.trim()).filter(Boolean) : [];
+      return { id:h.alertDate||h.time||Math.random(), t, cat, T:T[cat]||T['1'], cities };
+    }).filter(h=>h.cities.length>0);
     renderHist();computeStats();renderNat();
   }catch(e){
     el.innerHTML=`<div class="empty">⚠️ ${e.message}<br><span style="font-size:10px;color:var(--text3)">בדוק שהקובץ history.json קיים</span></div>`;

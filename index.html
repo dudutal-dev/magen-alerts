@@ -696,7 +696,8 @@ async function manualRefresh(){
   btn.textContent='...';btn.disabled=true;
   await poll();
   await loadHist();
-  btn.textContent='↻ רענן';btn.disabled=false;
+  btn.textContent='↻ רענן ('+hist.length+')';btn.disabled=false;
+  setTimeout(()=>{btn.textContent='↻ רענן';},3000);
 }
 
 function startPoll(){
@@ -880,16 +881,15 @@ async function loadHist(){
       el.innerHTML='<div class="empty">📭<br>אין היסטוריה עדיין</div>';return;
     }
     hist=arr.slice(0,200).map(h=>{
-      // Support both oref format (alertDate, category, data)
-      // and Tzofar format (time, category, cities)
       const dateStr = h.alertDate||h.time||h.alerttime||'';
       const t = dateStr ? new Date(dateStr.replace(' ','T')) : new Date(0);
       const cat = String(h.category||h.cat||'1');
-      const cities = Array.isArray(h.cities) ? h.cities :
-                     Array.isArray(h.data)   ? h.data :
+      const cities = Array.isArray(h.cities) ? h.cities.map(c=>typeof c==='object'?(c.name||c.city||JSON.stringify(c)):c).filter(Boolean) :
+                     Array.isArray(h.data)   ? h.data.map(c=>typeof c==='object'?(c.name||c.city||JSON.stringify(c)):c).filter(Boolean) :
                      typeof h.data==='string' ? h.data.split(',').map(s=>s.trim()).filter(Boolean) : [];
       return { id:h.alertDate||h.time||Math.random(), t, cat, T:T[cat]||T['1'], cities };
     }).filter(h=>h.cities.length>0);
+    console.log('[loadHist] loaded',hist.length,'entries, first:', hist[0]?.cities?.slice(0,3));
     renderHist();computeStats();renderNat();
   }catch(e){
     el.innerHTML=`<div class="empty">⚠️ ${e.message}<br><span style="font-size:10px;color:var(--text3)">בדוק שהקובץ history.json קיים</span></div>`;

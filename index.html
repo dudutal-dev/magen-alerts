@@ -651,7 +651,7 @@ async function poll(){
     const ageMin = meta?.updated
       ? Math.round((Date.now()-new Date(meta.updated))/60000)
       : null;
-    const fresh = ageMin===null || ageMin<10;
+    const fresh = ageMin===null || ageMin<15;
 
     setSt(fresh?'on':'wait', fresh?'LIVE':'עדכון ישן');
     document.getElementById('ticker').textContent=
@@ -878,8 +878,12 @@ async function loadHist(){
     if(!r.ok)throw new Error('HTTP '+r.status);
     const arr=await r.json();
     if(!Array.isArray(arr)||!arr.length){
-      el.innerHTML='<div class="empty">📭<br>אין היסטוריה עדיין</div>';return;
+      el.innerHTML='<div class="empty">📭<br>history.json ריק<br><span style="font-size:10px;color:var(--text3)">ה-Action רץ אבל לא הצליח לשמור נתונים</span></div>';return;
     }
+    // Show raw count before filtering
+    const rawCount = arr.length;
+    const firstEntry = arr[0];
+    const firstKeys = Object.keys(firstEntry||{}).join(', ');
     hist=arr.slice(0,200).map(h=>{
       const dateStr = h.alertDate||h.time||h.alerttime||'';
       const t = dateStr ? new Date(dateStr.replace(' ','T')) : new Date(0);
@@ -890,6 +894,12 @@ async function loadHist(){
       return { id:h.alertDate||h.time||Math.random(), t, cat, T:T[cat]||T['1'], cities };
     }).filter(h=>h.cities.length>0);
     console.log('[loadHist] loaded',hist.length,'entries, first:', hist[0]?.cities?.slice(0,3));
+    if(!hist.length){
+      el.innerHTML=`<div class="empty">⚠️ ${rawCount} רשומות התקבלו אבל נסוננו<br>
+        <span style="font-size:10px;color:var(--text3)">שדות: ${firstKeys}</span><br>
+        <span style="font-size:10px;color:var(--text3)">ערים בפריט ראשון: ${JSON.stringify((firstEntry?.cities||firstEntry?.data||[]).slice(0,2))}</span></div>`;
+      return;
+    }
     renderHist();computeStats();renderNat();
   }catch(e){
     el.innerHTML=`<div class="empty">⚠️ ${e.message}<br><span style="font-size:10px;color:var(--text3)">בדוק שהקובץ history.json קיים</span></div>`;

@@ -395,9 +395,9 @@ input[type=range]{width:100%;accent-color:var(--live);height:4px;cursor:pointer}
 <div class="page" id="page-hist">
   <div class="pg-title">📋 היסטוריית התרעות</div>
   <div class="tabs">
-    <button class="tab on" onclick="setHF('24h',this)">24 שעות</button>
+    <button class="tab" onclick="setHF('24h',this)">24 שעות</button>
     <button class="tab" onclick="setHF('48h',this)">48 שעות</button>
-    <button class="tab" onclick="setHF('all',this)">הכל</button>
+    <button class="tab on" onclick="setHF('all',this)">הכל</button>
   </div>
   <div id="hlist"><div class="empty">⏳<br>טוען...</div></div>
 </div>
@@ -600,7 +600,7 @@ const T={
 
 /* ===== STATE ===== */
 let hist=[],myCity=null,areas=[],liveHash='',liveData=null;
-let histF='24h',natF='all',pollT=null,cdT=null,ovT=null,ovSecs=0,ovMax=90;
+let histF='all',natF='all',pollT=null,cdT=null,ovT=null,ovSecs=0,ovMax=90;
 
 /* ===== NAV ===== */
 function goPage(id,btn){

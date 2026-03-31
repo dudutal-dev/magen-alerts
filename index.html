@@ -140,9 +140,10 @@ html,body{height:100%;overflow:hidden;background:var(--void);color:var(--text);
 /* NATIONAL */
 #page-nat{padding:14px}
 /* AI */
-#page-ai{padding:14px;display:flex;flex-direction:column;gap:12px}
+#page-ai{padding:0;display:flex;flex-direction:column}
 /* SETTINGS */
-#page-cfg{padding:14px;display:flex;flex-direction:column;gap:10px}
+#page-cfg{padding:0;overflow-y:auto;-webkit-overflow-scrolling:touch}
+#cfg-inner{padding:14px;display:flex;flex-direction:column;gap:10px}
 /* SHARED */
 .pg-title{font-family:var(--raj);font-size:16px;font-weight:700;letter-spacing:2px;
   color:var(--text3);margin-bottom:12px;display:flex;align-items:center;gap:7px}
@@ -446,6 +447,7 @@ input[type=range]{width:100%;accent-color:var(--live);height:4px;cursor:pointer}
 
 <!-- SETTINGS -->
 <div class="page" id="page-cfg">
+<div id="cfg-inner">
   <div class="pg-title">⚙️ הגדרות</div>
 
   <!-- API KEY CARD -->
@@ -552,7 +554,8 @@ input[type=range]{width:100%;accent-color:var(--live);height:4px;cursor:pointer}
   <div style="text-align:center;font-family:var(--mono);font-size:9px;color:var(--text3);padding:4px">
     MAGEN v2.1 · GitHub Actions · dudutal-dev
   </div>
-</div>
+</div><!-- cfg-inner -->
+</div><!-- page-cfg -->
 
 </div><!-- end #main -->
 

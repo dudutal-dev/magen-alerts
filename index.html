@@ -647,17 +647,17 @@ async function poll(){
       ? new Date(meta.updated).toLocaleTimeString('he-IL',{hour:'2-digit',minute:'2-digit'})
       : '—';
 
-    // Check data freshness — warn if older than 3 minutes
+    // Check data freshness — warn if older than 10 minutes (Actions runs every 5min)
     const ageMin = meta?.updated
       ? Math.round((Date.now()-new Date(meta.updated))/60000)
       : null;
-    const fresh = ageMin===null || ageMin<3;
+    const fresh = ageMin===null || ageMin<10;
 
     setSt(fresh?'on':'wait', fresh?'LIVE':'עדכון ישן');
     document.getElementById('ticker').textContent=
       now.toLocaleTimeString('he-IL',{hour:'2-digit',minute:'2-digit',second:'2-digit'})+
       ' · GitHub: '+ghTime+
-      (ageMin!==null?' (לפני '+ageMin+'דק\')'  :'');
+      (ageMin!==null && ageMin>2?' (לפני '+ageMin+'דק\')':'');
     document.getElementById('di-gh').textContent=ghTime;
     document.getElementById('di-last').textContent=now.toLocaleTimeString('he-IL');
     document.getElementById('di-st').textContent=fresh?'✅ מחובר':'⚠️ נתונים ישנים — GitHub Actions פועל?';

@@ -46,10 +46,13 @@ def parse_chord(name):
     if name in PITCHES:
         return name, "major"
     # tolerate 7ths etc. by falling back to the triad
-    for suf in ("maj7", "7", "m7", "sus4", "sus2", "add9", "9", "6"):
+    # Order matters and so does the test: "maj7".startswith("m") is True, which
+    # silently voiced every major-seventh chord as a minor triad.
+    minor_suffixes = {"m7", "m9", "m6", "min"}
+    for suf in ("maj7", "m7", "sus4", "sus2", "add9", "7", "9", "6"):
         if name.endswith(suf) and name[: -len(suf)] in PITCHES:
             base = name[: -len(suf)]
-            return base, ("minor" if suf.startswith("m") else "major")
+            return base, ("minor" if suf in minor_suffixes else "major")
     return None, None
 
 

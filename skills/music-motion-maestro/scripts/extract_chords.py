@@ -58,19 +58,27 @@ def main() -> int:
 
     beat_frames = librosa.time_to_frames(beat_times, sr=sr, hop_length=hop)
     beat_frames = np.clip(beat_frames, 0, chroma.shape[1] - 1)
-    beat_chroma = librosa.util.sync(chroma, beat_frames, aggregate=np.mean)
+    # Average between consecutive beats explicitly. librosa.util.sync treats the
+    # index array as boundaries and pads the edges, which shifted every chord
+    # label one beat away from the beat it was measured on.
+    n_beats = len(beat_frames) - 1
+    beat_chroma = np.zeros((chroma.shape[0], n_beats))
+    for i in range(n_beats):
+        s0 = int(beat_frames[i])
+        s1 = max(s0 + 1, int(beat_frames[i + 1]))
+        beat_chroma[:, i] = chroma[:, s0:s1].mean(axis=1)
 
     templates, names = build_templates()
     # Normalize each beat's chroma, then score against templates.
     bc = beat_chroma / (np.linalg.norm(beat_chroma, axis=0, keepdims=True) + 1e-9)
     scores = templates @ bc  # (24, n_beats)
     best = np.argmax(scores, axis=0)
-    per_beat = [names[i] for i in best]
+    per_beat = [names[i] for i in best]   # one label per beat interval
 
     # Merge consecutive identical chords into timed segments.
     segments = []
     i = 0
-    n = min(len(per_beat), len(beat_times) - 1)
+    n = len(per_beat)
     while i < n:
         j = i
         while j + 1 < n and per_beat[j + 1] == per_beat[i]:

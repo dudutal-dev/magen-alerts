@@ -42,12 +42,17 @@ def main() -> int:
         model_or_model_path=ICASSP_2022_MODEL_PATH,
     )
 
-    # Locate the produced MIDI and normalize its name to notes.mid.
+    # Locate the produced MIDI and normalize its name to notes.mid. Ignore a
+    # notes.mid left by an earlier run, or a second run would re-parse it.
     produced = None
+    newest = -1.0
     for fn in os.listdir(args.out):
-        if fn.endswith(".mid") or fn.endswith(".midi"):
-            produced = os.path.join(args.out, fn)
-            break
+        if fn == "notes.mid" or not fn.endswith((".mid", ".midi")):
+            continue
+        path = os.path.join(args.out, fn)
+        mtime = os.path.getmtime(path)
+        if mtime > newest:
+            newest, produced = mtime, path
     if not produced:
         print("basic-pitch did not produce a MIDI file.", file=sys.stderr)
         return 1
@@ -67,7 +72,9 @@ def main() -> int:
     score.write("musicxml", fp=xml_path)
 
     notes = []
-    for n in score.recurse().notes:
+    # flatten first: an offset taken from recurse() is relative to its measure,
+    # so start times restarted every bar and sorting scrambled the order.
+    for n in score.flatten().notes:
         pitches = [p.nameWithOctave for p in n.pitches] if n.isChord else [n.pitch.nameWithOctave]
         notes.append({
             "pitches": pitches,

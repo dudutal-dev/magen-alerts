@@ -65,6 +65,70 @@
     'Gsus4': { shape: [3, 3, 0, 0, 1, 3],     fingers: [2, 3, 0, 0, 1, 4] }
   };
 
+  /* ---------- practice set ----------
+     The library starts empty, and an empty app cannot show what it does. The
+     obvious fix would be to ship a few famous songs, but a song needs a
+     YouTube id and there is no way to check from here that a given id is the
+     right recording, or still exists — a dead or wrong link is worse than an
+     empty shelf.
+
+     What can be shipped honestly is the music itself. These are the standard
+     progressions, in common keys and tempos, with chords that are verified
+     against the theory rather than remembered. They carry no video, so the
+     stage runs them on its own clock with a click track: no link, no ads, no
+     network. They are practice material, and they say so. */
+  const PRACTICE = [
+    { title: 'I–V–vi–IV', artist: 'תרגול · הפרוגרסיה הנפוצה בפופ', genre: 'תרגול',
+      bpm: 96,  key: { tonic: 'C', mode: 'major' }, prog: ['C', 'G', 'Am', 'F'] },
+    { title: 'vi–IV–I–V', artist: 'תרגול · אותה פרוגרסיה, פתיחה במינור', genre: 'תרגול',
+      bpm: 100, key: { tonic: 'A', mode: 'minor' }, prog: ['Am', 'F', 'C', 'G'] },
+    { title: 'I–vi–IV–V', artist: 'תרגול · הבלדה של שנות ה-50', genre: 'תרגול',
+      bpm: 76,  key: { tonic: 'C', mode: 'major' }, prog: ['C', 'Am', 'F', 'G'] },
+    { title: 'ii–V–I', artist: 'תרגול · הקדנצה של הג׳אז', genre: 'תרגול',
+      bpm: 120, key: { tonic: 'C', mode: 'major' }, prog: ['Dm7', 'G7', 'Cmaj7', 'Cmaj7'] },
+    { title: 'בלוז 12 תיבות', artist: 'תרגול · בלוז ב-A', genre: 'תרגול',
+      bpm: 88,  key: { tonic: 'A', mode: 'major' },
+      prog: ['A7', 'A7', 'A7', 'A7', 'D7', 'D7', 'A7', 'A7', 'E7', 'D7', 'A7', 'E7'] },
+    { title: 'I–IV–V בגיטרה פתוחה', artist: 'תרגול · שלושת האקורדים הראשונים', genre: 'תרגול',
+      bpm: 92,  key: { tonic: 'G', mode: 'major' }, prog: ['G', 'C', 'D', 'G'] },
+    { title: 'Em–C–G–D', artist: 'תרגול · פופ-רוק במינור', genre: 'תרגול',
+      bpm: 110, key: { tonic: 'E', mode: 'minor' }, prog: ['Em', 'C', 'G', 'D'] },
+    { title: 'אנדלוסי (i–VII–VI–V)', artist: 'תרגול · צליל ים-תיכוני', genre: 'תרגול',
+      bpm: 104, key: { tonic: 'A', mode: 'minor' }, prog: ['Am', 'G', 'F', 'E'] }
+  ];
+
+  /** Builds the practice tracks, each with a real analysis and no video. */
+  function practiceTracks(barsPerChord, repeats) {
+    const bars = barsPerChord || 2, reps = repeats || 4;
+    return PRACTICE.map(p => {
+      const beat = 60 / p.bpm, barLen = beat * 4;
+      const chords = [], beatTimes = [], downbeats = [];
+      const total = p.prog.length * reps;
+      for (let i = 0; i < total; i++) {
+        const start = i * barLen * bars;
+        chords.push({ start: +start.toFixed(3), end: +(start + barLen * bars).toFixed(3),
+                      chord: p.prog[i % p.prog.length] });
+      }
+      const duration = total * barLen * bars;
+      for (let t = 0, i = 0; t < duration; t += beat, i++) {
+        beatTimes.push(+t.toFixed(3));
+        if (i % 4 === 0) downbeats.push(+t.toFixed(3));
+      }
+      return {
+        videoId: null, url: '', title: p.title, artist: p.artist,
+        genre: p.genre, album: 'ספריית תרגול', practice: true,
+        analysis: {
+          bpm: p.bpm, key: p.key, duration: +duration.toFixed(2), firstBeat: 0,
+          timeSignature: 4, beatTimes, downbeats,
+          sections: [{ start: 0, end: +duration.toFixed(2), label: 'mid', energy: .5 }],
+          chords, energy: .5, valence: p.key.mode === 'major' ? .7 : .4,
+          mood: 'practice', source: 'practice',
+          confidence: { tempo: 1, key: 1 }      // written down, not estimated
+        }
+      };
+    });
+  }
+
   /** Grouped for the chord library / poster, in teaching order. */
   const CHORD_GROUPS = [
     { id: 'major',   he: 'אקורדים מז׳וריים', en: 'MAJOR CHORDS', chords: ['A', 'B', 'C', 'D', 'E', 'F', 'G'] },
@@ -198,8 +262,22 @@
       'fingers curved, wrists relaxed and level with the forearm';
   }
 
-  const fingeringSentence = (name, instrument) =>
-    instrument === 'piano' ? pianoVoicingSentence(name) : guitarFingeringSentence(name);
+  /**
+   * The fingering as a sentence for an image model.
+   *
+   * For a guitar it now carries real distances as well as string and fret
+   * numbers. "Fret 3" is a symbol an image model has no picture of; "87mm
+   * from the nut" is a distance, and the neck in the frame has a length it
+   * can be measured against. The thumb comes with it, which the old sentence
+   * never mentioned at all — and a thumb left unsaid is why generated
+   * guitarists so often have one draped over the top of the neck.
+   */
+  const fingeringSentence = (name, instrument) => {
+    if (instrument === 'piano') return pianoVoicingSentence(name);
+    const base = guitarFingeringSentence(name);
+    const mm = global.Fretboard ? global.Fretboard.placementMm(name) : null;
+    return mm ? `${base} — measured on the neck: ${mm}` : base;
+  };
 
   /* ---------- visual translation ----------
      "middle finger on string 5 at fret 2" is musician notation. An image model
@@ -354,16 +432,127 @@
   }
   const thumbUrl = id => `https://i.ytimg.com/vi/${id}/hqdefault.jpg`;
 
+  /**
+   * The key of an analysis, or null when it does not have one.
+   *
+   * Every caller guarded on `analysis.bpm` and then read `analysis.key.tonic`,
+   * which is a different question. A record carrying a tempo but no key — a
+   * hand-edited backup, an import that was cut short, an older export — took
+   * the whole library view down with it. Returning null rather than a made-up
+   * default keeps callers from printing a key nobody detected.
+   */
+  const keyOf = a => (a && a.key && a.key.tonic) ? a.key : null;
+  /** "Am" / "C" / '' — the short label used on badges. */
+  const keyLabel = a => {
+    const k = keyOf(a);
+    return k ? k.tonic + (k.mode === 'minor' ? 'm' : '') : '';
+  };
+
+  /* ---------- reading a track's details off the link ----------
+     Asking someone to retype the title and artist that are already
+     sitting in the URL is busywork. YouTube's oEmbed endpoint hands
+     both over without a key, so we ask it and fill the form in.
+
+     It is a network call to a third party, so it may be blocked or
+     offline. Every caller must handle a null and let the user type —
+     auto-fill is a convenience, never a prerequisite. */
+
+  /** Strips the production noise YouTube titles collect. */
+  function cleanTitle(raw) {
+    let s = String(raw || '');
+    // "(Official Video)", "[Lyric Video]", "(4K Remaster)" and friends
+    const noise = /[\(\[]\s*(?:[^\)\]]*\b(?:official|lyrics?|audio|video|visuali[sz]er|remaster(?:ed)?|hd|hq|4k|8k|mv|m\/v|full|clip|prod|explicit)\b[^\)\]]*)\s*[\)\]]/gi;
+    let prev;
+    do { prev = s; s = s.replace(noise, ' '); } while (s !== prev);
+    s = s.replace(/\s*[|｜]\s*[^|｜]*$/, '');        // trailing "| Official Channel"
+    // The same noise also shows up bare on the tail: "… 4K Remastered", "… HD".
+    s = s.replace(
+      /(?:\s*[-–—]?\s*\b(?:official(?:\s+(?:music\s+)?video|\s+audio)?|lyrics?(?:\s+video)?|audio|visuali[sz]er|remaster(?:ed)?|hd|hq|4k|8k)\b)+\s*$/gi,
+      '');
+    s = s.replace(/\s*[-–—]\s*$/, '');
+    return s.replace(/\s{2,}/g, ' ').trim();
+  }
+
+  /** "Artist - Song" is the dominant convention; fall back to the channel. */
+  function splitTitle(cleaned, channel) {
+    // Channel names carry branding the artist name does not: "Queen Official",
+    // "AdeleVEVO", the auto-generated "… - Topic".
+    const chan = String(channel || '')
+      .replace(/\s*-\s*Topic$/i, '')
+      .replace(/\s*VEVO$/i, '')
+      .replace(/\s+Official(?:\s+(?:Channel|Music))?$/i, '')
+      .trim();
+    const m = cleaned.match(/^(.+?)\s+[-–—]\s+(.+)$/);
+    if (m) {
+      const left = m[1].trim(), right = m[2].trim();
+      // "Artist - Song" is the usual order, but plenty of uploads invert it.
+      // The channel name breaks the tie: whichever side it matches is the artist.
+      const norm = x => x.toLowerCase().replace(/\s+/g, '');
+      if (chan && norm(right) === norm(chan)) return { artist: right, title: left };
+      // Guard against a hyphen inside the song name itself.
+      if (left && right && left.length < 60) return { artist: left, title: right };
+    }
+    return { artist: chan, title: cleaned };
+  }
+
+  /**
+   * Resolves a video's title and artist. Never rejects — resolves to null
+   * when the lookup is unavailable, so the form stays usable offline.
+   */
+  function fetchMeta(videoId) {
+    const url = 'https://www.youtube.com/oembed?format=json&url=' +
+                encodeURIComponent('https://www.youtube.com/watch?v=' + videoId);
+    return fetch(url, { mode: 'cors' })
+      .then(r => (r.ok ? r.json() : null))
+      .then(j => {
+        if (!j || !j.title) return null;
+        const cleaned = cleanTitle(j.title);
+        const parts = splitTitle(cleaned, j.author_name);
+        return { title: parts.title || cleaned, artist: parts.artist || '', raw: j.title };
+      })
+      .catch(() => null);
+  }
+
   /* ---------- persistence ---------- */
   const KEY = 'maestro.studio.v1';
   const defaults = () => ({ tracks: [], characters: [], settings: { volume: 80, lang: 'he', voiceRate: .95 } });
+
+  /* Declared before normalize(), which runs during module init when stored
+     data is read back: a const here would still be in its dead zone. */
+  const uid = () => 'x' + Math.random().toString(36).slice(2, 10) + Date.now().toString(36).slice(-4);
+
+  /**
+   * Forces a parsed blob into the shape the app relies on.
+   *
+   * Object.assign happily lets `{"tracks": "hello"}` through, and from then on
+   * every view that maps over the library is calling .map on a string. The
+   * data comes from a file the user picked or from storage another version
+   * wrote, so neither source is trustworthy enough to spread blindly. Anything
+   * of the wrong type falls back to the default rather than being repaired
+   * into something that was never there.
+   */
+  function normalize(parsed) {
+    const s = defaults();
+    if (!parsed || typeof parsed !== 'object' || Array.isArray(parsed)) return s;
+    if (Array.isArray(parsed.tracks)) {
+      s.tracks = parsed.tracks.filter(t => t && typeof t === 'object' && (t.videoId || t.practice))
+        .map(t => (t.id ? t : Object.assign({ id: uid() }, t)));
+    }
+    if (Array.isArray(parsed.characters)) {
+      s.characters = parsed.characters.filter(c => c && typeof c === 'object')
+        .map(c => (c.id ? c : Object.assign({ id: uid() }, c)));
+    }
+    if (parsed.settings && typeof parsed.settings === 'object' && !Array.isArray(parsed.settings)) {
+      Object.assign(s.settings, parsed.settings);
+    }
+    return s;
+  }
 
   function load() {
     try {
       const raw = localStorage.getItem(KEY);
       if (!raw) return defaults();
-      const parsed = JSON.parse(raw);
-      return Object.assign(defaults(), parsed);
+      return normalize(JSON.parse(raw));
     } catch (e) { return defaults(); }
   }
   let state = load();
@@ -373,7 +562,6 @@
     try { localStorage.setItem(KEY, JSON.stringify(state)); return true; }
     catch (e) { console.warn('save failed', e); return false; }
   }
-  const uid = () => 'x' + Math.random().toString(36).slice(2, 10) + Date.now().toString(36).slice(-4);
 
   const Store = {
     get state() { return state; },
@@ -396,11 +584,93 @@
     removeCharacter(id) { state.characters = state.characters.filter(c => c.id !== id); save(); },
     getCharacter(id) { return state.characters.find(c => c.id === id); },
     setSetting(k, v) { state.settings[k] = v; save(); },
-    exportAll() { return JSON.stringify(state, null, 2); },
-    importAll(json) {
+    /* The backup is what carries work between devices, so it has to include
+       the poster. Those images live in IndexedDB rather than localStorage,
+       which makes both of these asynchronous. */
+    async exportAll() {
+      const payload = Object.assign({}, state);
+      try { payload.posters = await Posters.all(); }
+      catch (e) { payload.posters = {}; }
+      return JSON.stringify(payload, null, 2);
+    },
+    async importAll(json) {
       const parsed = JSON.parse(json);
-      state = Object.assign(defaults(), parsed);
+      const posters = (parsed && parsed.posters) || {};
+      state = normalize(parsed);             // posters never enter localStorage
       save();
+      let restored = 0;
+      try { restored = await Posters.replaceAll(posters); } catch (e) { restored = 0; }
+      return { posters: restored, expected: Object.keys(posters).length };
+    }
+  };
+
+  /* ---------- poster images ----------
+     A finished poster is thirty generated images. Held in a plain object they
+     vanished on refresh and never reached the backup, so the work could not
+     move between devices. They are also far too large for localStorage, whose
+     budget is a few megabytes for everything. IndexedDB has room for them, at
+     the cost of being asynchronous.
+
+     Every call resolves rather than rejects on a missing or blocked database —
+     private-browsing modes disable IndexedDB outright — so the poster screen
+     degrades to session-only instead of breaking. */
+
+  const IDB_NAME = 'maestro.studio', IDB_STORE = 'posters';
+
+  function openDb() {
+    return new Promise((resolve, reject) => {
+      if (!global.indexedDB) return reject(new Error('IndexedDB unavailable'));
+      const req = global.indexedDB.open(IDB_NAME, 1);
+      req.onupgradeneeded = () => {
+        const db = req.result;
+        if (!db.objectStoreNames.contains(IDB_STORE))
+          db.createObjectStore(IDB_STORE, { keyPath: 'chord' });
+      };
+      req.onsuccess = () => resolve(req.result);
+      req.onerror = () => reject(req.error || new Error('IndexedDB open failed'));
+      req.onblocked = () => reject(new Error('IndexedDB blocked'));
+    });
+  }
+
+  function withStore(mode, run) {
+    return openDb().then(db => new Promise((resolve, reject) => {
+      const t = db.transaction(IDB_STORE, mode);
+      let result;
+      run(t.objectStore(IDB_STORE), v => { result = v; });
+      t.oncomplete = () => { db.close(); resolve(result); };
+      t.onerror = () => { db.close(); reject(t.error); };
+      t.onabort = () => { db.close(); reject(t.error || new Error('aborted')); };
+    }));
+  }
+
+  const Posters = {
+    get available() { return !!global.indexedDB; },
+
+    all() {
+      return withStore('readonly', (s, set) => {
+        const req = s.getAll();
+        req.onsuccess = () => {
+          const map = {};
+          for (const r of req.result || []) map[r.chord] = r.data;
+          set(map);
+        };
+      });
+    },
+    set(chord, data) { return withStore('readwrite', s => s.put({ chord, data })); },
+    remove(chord)    { return withStore('readwrite', s => s.delete(chord)); },
+    clear()          { return withStore('readwrite', s => s.clear()); },
+
+    replaceAll(map) {
+      return withStore('readwrite', (s, set) => {
+        s.clear();
+        let n = 0;
+        for (const chord of Object.keys(map || {})) {
+          if (typeof map[chord] !== 'string') continue;
+          s.put({ chord, data: map[chord] });
+          n++;
+        }
+        set(n);
+      });
     }
   };
 
@@ -409,6 +679,6 @@
     parseChord, guitarFingering, pianoVoicing, romanNumeral,
     guitarFingeringSentence, pianoVoicingSentence, fingeringSentence,
     visualFingering, neckLandmark, requiredLandmark, transposeChord, capoShapes,
-    parseVideoId, thumbUrl, Store
+    parseVideoId, thumbUrl, keyOf, keyLabel, PRACTICE, practiceTracks, fetchMeta, cleanTitle, splitTitle, Store, Posters
   };
 })(window);

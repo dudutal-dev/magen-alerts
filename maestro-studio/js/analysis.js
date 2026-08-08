@@ -188,9 +188,12 @@
   /** Human summary line, the way the skill asks for it. */
   function summaryLine(a) {
     if (!a || !a.bpm) return 'לא נותח';
-    const modeHe = a.key.mode === 'minor' ? 'מינור' : 'מז׳ור';
-    const tonicHe = MM.PITCHES_HE[a.key.tonic] || a.key.tonic;
-    let s = `${Math.round(a.bpm)} BPM · ${tonicHe} ${modeHe}`;
+    const k = MM.keyOf(a);
+    let s = `${Math.round(a.bpm)} BPM`;
+    if (k) {
+      const modeHe = k.mode === 'minor' ? 'מינור' : 'מז׳ור';
+      s += ` · ${MM.PITCHES_HE[k.tonic] || k.tonic} ${modeHe}`;
+    }
     if (a.chords && a.chords.length) {
       const prog = [];
       for (const c of a.chords) if (!prog.length || prog[prog.length - 1] !== c.chord) prog.push(c.chord);
@@ -227,7 +230,116 @@
     };
   }
 
+  /**
+   * Carries the progression across the part of the song that was not analysed.
+   *
+   * Recording a minute of a four-minute song leaves the last three minutes
+   * with no chords at all: the music plays on, chordAt returns null, and the
+   * performer has nothing to fret — the stage simply goes quiet while the song
+   * continues. Popular songs repeat, which is the assumption the guided mode
+   * has always made, so the analysed span is tiled forward to the end.
+   *
+   * This is inference, not measurement, so it is marked: `analysedTo` records
+   * where the real analysis stopped and every carried-over segment carries
+   * `extended`, which lets the UI say which is which instead of presenting a
+   * guess as a reading.
+   */
+  function extendChords(a, duration) {
+    const cs = a && a.chords;
+    if (!cs || !cs.length || !duration) return a;
+    const first = cs[0].start, last = cs[cs.length - 1].end;
+    const cycle = last - first;
+    if (cycle < 1 || last >= duration - 0.5) return a;
+
+    a.analysedTo = +last.toFixed(2);
+    const out = cs.slice();
+    for (let k = 1; first + k * cycle < duration; k++) {
+      for (const c of cs) {
+        const start = c.start + k * cycle;
+        if (start >= duration) break;
+        out.push({
+          start: +start.toFixed(3),
+          end: +Math.min(c.end + k * cycle, duration).toFixed(3),
+          chord: c.chord, extended: true
+        });
+      }
+      if (out.length > 4000) break;      // a guard, not a limit anyone should hit
+    }
+    a.chords = out;
+
+    // The beat grid and sections are arithmetic, so they can simply run on.
+    if (a.bpm) {
+      const beat = 60 / a.bpm, sig = a.timeSignature || 4;
+      const beats = [], downs = [];
+      for (let t = a.firstBeat || 0, i = 0; t < duration; t += beat, i++) {
+        beats.push(+t.toFixed(3));
+        if (i % sig === 0) downs.push(+t.toFixed(3));
+      }
+      a.beatTimes = beats; a.downbeats = downs;
+    }
+    if (a.sections && a.sections.length) {
+      const lastSec = a.sections[a.sections.length - 1];
+      if (lastSec.end < duration) lastSec.end = +duration.toFixed(2);
+    }
+    return a;
+  }
+
+  /**
+   * Stitches the analyses of several recorded pieces of one song into one.
+   *
+   * An ad in the middle of a song splits the recording in two, and each half
+   * gets analysed on its own — separately they each describe a different part
+   * of the same song, already on song time. Merging keeps every chord from
+   * every part instead of throwing away all but the longest, so a song
+   * interrupted by ads is still covered end to end.
+   *
+   * Tempo, key and the summary numbers come from the longest part, which has
+   * the most evidence behind them; the short part either agrees or is too
+   * short to argue with.
+   */
+  function mergeAnalyses(parts) {
+    parts = (parts || []).filter(p => p && p.chords && p.chords.length);
+    if (!parts.length) return null;
+    if (parts.length === 1) return parts[0];
+
+    const span = p => (p.chords[p.chords.length - 1].end - p.chords[0].start);
+    const main = parts.reduce((a, b) => span(b) > span(a) ? b : a);
+    const out = Object.assign({}, main);
+
+    // Overlaps are possible where the parts meet; the earlier one wins the
+    // disputed moment, because it was measured with more of its bar in view.
+    const chords = [];
+    for (const c of parts.flatMap(p => p.chords).sort((a, b) => a.start - b.start)) {
+      const last = chords[chords.length - 1];
+      if (last && c.start < last.end - 0.05) {
+        if (c.end <= last.end) continue;
+        chords.push({ ...c, start: last.end });
+      } else chords.push({ ...c });
+    }
+    out.chords = chords;
+
+    const uniq = (list) => {
+      const s = [...list].sort((a, b) => a - b), keep = [];
+      for (const t of s) if (!keep.length || t - keep[keep.length - 1] > 0.05) keep.push(t);
+      return keep;
+    };
+    out.beatTimes = uniq(parts.flatMap(p => p.beatTimes || []));
+    out.downbeats = uniq(parts.flatMap(p => p.downbeats || []));
+    out.sections = parts.flatMap(p => p.sections || []).sort((a, b) => a.start - b.start);
+    out.duration = +Math.max(...parts.map(p => p.duration || 0)).toFixed(2);
+    out.analyzedFrom = Math.min(...parts.map(p => p.analyzedFrom || 0));
+    // Two takes stitched together are less certain than one clean one.
+    const conf = main.confidence || {};
+    out.confidence = {
+      tempo: +Math.min(...parts.map(p => (p.confidence || {}).tempo != null ? p.confidence.tempo : conf.tempo || 0)).toFixed(3),
+      key: +Math.min(...parts.map(p => (p.confidence || {}).key != null ? p.confidence.key : conf.key || 0)).toFixed(3)
+    };
+    out.parts = parts.length;
+    return out;
+  }
+
   global.Analysis = {
+    extendChords, mergeAnalyses,
     emptyAnalysis, buildBeatGrid, fromProgression, fromSkillJson,
     chordAt, chordIndexAt, sectionAt, beatPhase, summaryLine, progressionOf, TapTempo
   };

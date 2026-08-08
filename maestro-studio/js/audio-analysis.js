@@ -224,6 +224,39 @@
     return { tonic: best.tonic, mode: best.mode, confidence: Math.max(0, best.score) };
   }
 
+  /**
+   * Settles the relative major/minor question using the chords.
+   *
+   * A key and its relative minor contain exactly the same notes, so a method
+   * that only looks at how often each pitch sounds cannot tell them apart —
+   * Am F C G came back as C major, which is defensible from the chroma and
+   * wrong to every guitarist who would call it A minor. What separates them is
+   * which chord the music treats as home, and that is in the progression: the
+   * first and last chords carry the tonal weight. Only the relative pair is
+   * ever swapped, and only when the chords agree, so a confident reading is
+   * never overturned by this.
+   */
+  function refineKeyWithChords(key, chords) {
+    if (!chords || chords.length < 2) return key;
+    const rel = key.mode === 'major'
+      ? { tonic: MM.PITCHES[(MM.PITCHES.indexOf(key.tonic) + 9) % 12], mode: 'minor' }
+      : { tonic: MM.PITCHES[(MM.PITCHES.indexOf(key.tonic) + 3) % 12], mode: 'major' };
+
+    const nameOf = k => k.tonic + (k.mode === 'minor' ? 'm' : '');
+    const other = nameOf(rel);
+
+    /* Only the opening chord is allowed to overturn the pitch-class evidence.
+       Weighting the closing chord too made Dm G C Am come out A minor because
+       it happens to end on the vi — but that is a ii-V-I in C and every
+       musician would call it C major. Where a piece starts is the stronger
+       single cue, and requiring it keeps the rule from firing on a passing
+       final chord. */
+    if (chords[0].chord === other) {
+      return { tonic: rel.tonic, mode: rel.mode, confidence: key.confidence };
+    }
+    return key;
+  }
+
   /* ---------- chords ---------- */
   function chordTemplates() {
     const t = [], names = [];
@@ -315,7 +348,19 @@
     p('מאתר קצב…');
     const tempo = estimateTempo(flux, envSr);
     if (!tempo.bpm) throw new Error('לא הצלחתי לזהות קצב');
-    const firstBeat = estimatePhase(flux, envSr, tempo.beatLen);
+    /* A frame's flux describes a window that begins at i*HOP but spans FRAME
+       samples, so an onset registers as soon as it enters the window rather
+       than when the frame starts. Timing frames from the window start therefore
+       reports every onset early by roughly half a frame. Measured against a
+       single impulse at exactly 1.000s, the peak landed at 0.929s — 71ms early,
+       which is a fifth of a beat at 120 BPM and enough to make the performer
+       feel ahead of the music. Referencing each frame to the centre of its
+       window removes the systematic part of that. */
+    const frameCentre = (FRAME / 2) / sr;
+    let firstBeat = estimatePhase(flux, envSr, tempo.beatLen) + frameCentre;
+    // Keep it the earliest beat at or after zero, as the grid builder assumes.
+    while (firstBeat >= tempo.beatLen) firstBeat -= tempo.beatLen;
+    while (firstBeat < 0) firstBeat += tempo.beatLen;
 
     p('בונה רשת ביטים…');
     const sig = 4;
@@ -329,10 +374,13 @@
     const mean = new Array(12).fill(0);
     for (const c of chroma) for (let i = 0; i < 12; i++) mean[i] += c[i];
     for (let i = 0; i < 12; i++) mean[i] /= chroma.length;
-    const key = estimateKey(mean);
+    let key = estimateKey(mean);
 
     p('מחלץ אקורדים…');
     const chords = detectChords(chroma, envSr, beatTimes);
+    // The chords are what break the relative major/minor tie, so this has to
+    // come after them even though the key is reported first.
+    key = refineKeyWithChords(key, chords);
 
     p('מזהה מבנה…');
     const sections = buildSections(rms, envSr, duration, tempo.beatLen, sig);
@@ -363,5 +411,244 @@
     };
   }
 
-  global.AudioAnalysis = { analyzeFile, fft, estimateTempo, estimateKey, decodeToMono };
+  /* ============================================================
+     Capturing the sound instead of asking for a file
+
+     The analyser above needs audio, and until now the only way to
+     give it any was an mp3 the user had to find somewhere. That is
+     the wrong ask: the song is already playing, in this very tab,
+     through the YouTube player.
+
+     The browser cannot read that audio out of the player — the
+     iframe is cross-origin and deliberately opaque. But it can
+     record the tab's own output, with the user's explicit consent,
+     through the same screen-share machinery used for video calls.
+     So we ask for the tab, keep only the audio track, and record it
+     while the song plays. Nothing is downloaded and nothing leaves
+     the machine.
+
+     This needs tab-audio capture, which today means desktop Chrome
+     or Edge. Callers should check `canCaptureTab()` first and say so
+     plainly rather than failing at the picker.
+     ============================================================ */
+
+  /**
+   * Rebases an analysis onto song time.
+   *
+   * A recording that starts once the song is already playing describes the
+   * window [offset, offset+length], but every timestamp in it counts from
+   * zero. Left alone that makes the performer play the whole song late by
+   * `offset`. Shifting the grid here is exact, so the manual nudge stays for
+   * genuine taste rather than for arithmetic we can do ourselves.
+   */
+  function shiftAnalysis(a, offset) {
+    if (!offset) return a;
+    const r = t => +(t + offset).toFixed(3);
+    a.firstBeat = r(a.firstBeat);
+    a.beatTimes = a.beatTimes.map(r);
+    a.downbeats = a.downbeats.map(r);
+    a.chords = a.chords.map(c => ({ ...c, start: r(c.start), end: r(c.end) }));
+    a.sections = a.sections.map(s => ({ ...s, start: r(s.start), end: r(s.end) }));
+    a.analyzedFrom = +offset.toFixed(2);
+    return a;
+  }
+
+  function canCaptureTab() {
+    return !!(navigator.mediaDevices && navigator.mediaDevices.getDisplayMedia &&
+              typeof MediaRecorder !== 'undefined');
+  }
+
+  /**
+   * Records tab audio and returns it as an ArrayBuffer that analyzeFile
+   * can decode. Resolves early if the user stops sharing.
+   *
+   * @param {object}   o
+   * @param {number}   o.seconds     how long to record
+   * @param {function} o.onStart     called once the audio track is live
+   * @param {function} o.onTick      called each second with elapsed seconds
+   * @param {object}   o.control     receives a .stop() to finish early
+   */
+  async function captureTabAudio(o) {
+    o = o || {};
+    if (!canCaptureTab()) {
+      throw new Error('הדפדפן הזה לא תומך בהקלטת אודיו מטאב. נסה Chrome או Edge במחשב.');
+    }
+
+    let stream;
+    try {
+      stream = await navigator.mediaDevices.getDisplayMedia({
+        video: true,               // required — the picker refuses audio-only
+        audio: { echoCancellation: false, noiseSuppression: false, autoGainControl: false }
+      });
+    } catch (e) {
+      throw new Error(e && e.name === 'NotAllowedError'
+        ? 'ביטלת את השיתוף. כדי לנתח צריך לאשר את שיתוף הטאב.'
+        : 'לא הצלחתי לפתוח את בורר הטאבים.');
+    }
+
+    const audio = stream.getAudioTracks()[0];
+    // The picker lets you share a tab without its sound, which is the single
+    // most common way this goes wrong. Catch it now, while we can still explain.
+    if (!audio) {
+      stream.getTracks().forEach(t => t.stop());
+      throw new Error('שיתפת את הטאב בלי הקול. חזור ונסה שוב — צריך לסמן ' +
+                      '"שתף גם את האודיו של הכרטיסייה" בתחתית החלון.');
+    }
+    stream.getVideoTracks().forEach(t => t.stop());   // we only ever wanted the sound
+
+    return recordTrack(audio, o,
+      'לא נקלט קול. ודא שהשיר באמת מתנגן ושסימנת לשתף את האודיו של הכרטיסייה.');
+  }
+
+  /* ---------- the microphone route ----------
+     Tab capture does not exist on iOS or on any phone browser, which
+     left mobile users with no way to analyse anything. The microphone
+     does exist there, so the song can be played out loud and listened
+     to instead.
+
+     It is a worse signal than tab audio — room noise, speaker
+     response and the phone's own processing all get in the way — so
+     we ask the browser to switch off the three things that would
+     actively fight us. Echo cancellation is the important one: it is
+     built to remove exactly the sound coming out of the speaker,
+     which here is the entire recording. */
+
+  function canCaptureMic() {
+    return !!(navigator.mediaDevices && navigator.mediaDevices.getUserMedia &&
+              typeof MediaRecorder !== 'undefined');
+  }
+
+  async function captureMicAudio(o) {
+    o = o || {};
+    if (!canCaptureMic()) {
+      throw new Error('הדפדפן הזה לא נותן גישה למיקרופון.');
+    }
+    let stream;
+    try {
+      stream = await navigator.mediaDevices.getUserMedia({
+        audio: { echoCancellation: false, noiseSuppression: false, autoGainControl: false }
+      });
+    } catch (e) {
+      throw new Error(e && (e.name === 'NotAllowedError' || e.name === 'SecurityError')
+        ? 'אין הרשאה למיקרופון. אשר גישה בהגדרות האתר ונסה שוב.'
+        : 'לא הצלחתי לפתוח את המיקרופון.');
+    }
+    const audio = stream.getAudioTracks()[0];
+    if (!audio) {
+      stream.getTracks().forEach(t => t.stop());
+      throw new Error('לא נמצא מיקרופון זמין.');
+    }
+    return recordTrack(audio, o,
+      'לא נקלט קול. ודא שהשיר מתנגן ברמקול ושהעוצמה גבוהה מספיק.');
+  }
+
+  /**
+   * Shared recorder: runs an audio track for `seconds`, or until stopped.
+   *
+   * It records in segments rather than one continuous take, because the sound
+   * coming off the tab is not always the song. YouTube drops its own video in
+   * before the song and sometimes in the middle of it, and that audio is not
+   * merely useless — analysed together with the song it shifts every chord
+   * after it by the ad's length. So the caller says, through `wanted()`, when
+   * the sound is the song; the recorder closes a segment the moment that turns
+   * false and opens a fresh one when it comes back. Each segment is a complete
+   * file on its own, and carries the song position it started at.
+   *
+   * @param {function} o.wanted    is the audio right now the thing we want
+   * @param {function} o.position  where in the song we are, in seconds
+   * @returns {Promise<{segments: Array<{buf: ArrayBuffer, at: number, len: number}>}>}
+   */
+  async function recordTrack(audio, o, silenceMessage) {
+    const wanted = typeof o.wanted === 'function' ? o.wanted : () => true;
+    const position = typeof o.position === 'function' ? o.position : () => 0;
+
+    let rec = null, chunks = null, segAt = 0, segWall = 0, everOpened = false;
+    const closing = [];
+
+    const openSeg = () => {
+      if (rec) return;
+      everOpened = true;
+      chunks = [];
+      rec = new MediaRecorder(new MediaStream([audio]));
+      const c = chunks;
+      rec.ondataavailable = e => { if (e.data && e.data.size) c.push(e.data); };
+      segAt = position();
+      segWall = Date.now();
+      rec.start();
+    };
+
+    const closeSeg = () => {
+      if (!rec) return;
+      const r = rec, c = chunks, at = segAt;
+      const len = (Date.now() - segWall) / 1000;
+      rec = null; chunks = null;
+      closing.push(new Promise(resolve => {
+        const collect = () => {
+          const blob = new Blob(c, { type: r.mimeType || 'audio/webm' });
+          resolve(blob.size > 2048 ? { blob, at, len } : null);
+        };
+        r.onstop = collect;
+        if (r.state !== 'inactive') r.stop();
+        else collect();
+      }));
+    };
+
+    let ticker = null, finished = false, resolveDone;
+    const done = new Promise(r => { resolveDone = r; });
+    const finish = () => {
+      if (finished) return;
+      finished = true;
+      if (ticker) clearInterval(ticker);
+      closeSeg();
+      audio.stop();
+      resolveDone();
+    };
+
+    if (o.control) o.control.stop = finish;
+    audio.addEventListener('ended', finish);   // user hit "Stop sharing"
+
+    if (wanted()) openSeg();
+    if (o.onStart) o.onStart();
+
+    const startedAt = Date.now();
+    const limit = Math.max(5, o.seconds || 60);
+    /* Counting wall-clock seconds is the wrong stop condition for "the whole
+       song": the recording starts wherever playback has already reached, so
+       running for the song's full length overshoots the end by exactly that
+       much and appends whatever plays next. Callers can supply their own
+       condition and stop at the end of the track instead. */
+    const isDone = typeof o.shouldStop === 'function'
+      ? o.shouldStop
+      : (elapsed) => elapsed >= limit;
+    /* Polled often rather than a few times a second, because this is what
+       decides when a segment opens: the caller turns `wanted` on the instant
+       the song starts, and every tick of delay past that is song the take
+       never gets. */
+    ticker = setInterval(() => {
+      const elapsed = (Date.now() - startedAt) / 1000;
+      if (wanted()) openSeg(); else closeSeg();
+      if (o.onTick) o.onTick(elapsed, limit);
+      if (isDone(elapsed)) finish();
+    }, 60);
+
+    // Whatever ends the recording, every open segment has to be flushed first.
+    await done;
+    const parts = (await Promise.all(closing)).filter(Boolean);
+    // "Nothing was recorded" and "nothing but ads played" look the same from
+    // here but need opposite advice, and the caller is the one that knows.
+    if (!parts.length) throw new Error(
+      everOpened ? silenceMessage : (o.nothingWantedMessage || silenceMessage));
+
+    const segments = [];
+    for (const p of parts) {
+      segments.push({ buf: await p.blob.arrayBuffer(), at: p.at, len: p.len });
+    }
+    return { segments };
+  }
+
+  global.AudioAnalysis = {
+    analyzeFile, fft, estimateTempo, estimateKey, decodeToMono,
+    canCaptureTab, captureTabAudio, canCaptureMic, captureMicAudio,
+    shiftAnalysis
+  };
 })(window);

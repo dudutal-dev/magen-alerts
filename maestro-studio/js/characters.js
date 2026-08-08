@@ -88,8 +88,22 @@
   ];
 
   const BACKDROPS = [
-    { id: 'black-seamless', he: 'רקע שחור נקי (כמו הייחוס)',
-      v: 'pure black seamless studio backdrop, subject fully separated from the background' },
+    /* Also the best choice for frames headed to the live stage: the stage
+       screen-blends them, and screen leaves true black showing whatever is
+       behind it, so a black surround disappears with no cutting and no edge. */
+    { id: 'black-seamless', he: 'רקע שחור נקי (מומלץ לבמה החיה)',
+      v: 'pure black seamless studio backdrop, true black with no grey lift, no vignette and no ' +
+         'gradient falloff, no visible floor line or horizon, subject fully separated from the ' +
+         'background and lit so the rim of the silhouette stays clearly readable against it' },
+    /* For frames destined for the live stage. The app cuts the backdrop away so
+       one scene can stay put while only the player changes, and that cut is a
+       flood fill from the edges — it is exact against a flat, even colour and
+       unreliable against gradients, texture or a shadow falling on the wall. */
+    { id: 'cutout', he: 'רקע להסרה — לבמה החיה',
+      v: 'flat uniform chroma-key backdrop in one solid saturated green, perfectly even edge to ' +
+         'edge with no gradient, no texture, no vignette and no shadow cast onto it, the subject ' +
+         'lit separately and fully separated from it with clean unblurred edges, nothing in the ' +
+         'wardrobe or instrument in that same green' },
     { id: 'grey-seamless', he: 'רקע אפור סטודיו', v: 'neutral grey seamless studio backdrop with a soft gradient' },
     { id: 'wood-studio', he: 'חדר הקלטות מעץ',
       v: 'warm wooden recording studio, acoustic panels and cables softly out of focus behind the subject' },
@@ -334,7 +348,9 @@
     L.push('');
     if (a && a.bpm) {
       const bar = (240 / a.bpm) * ((a.timeSignature || 4) / 4);
-      L.push(`> One prompt, whole clip. ${Math.round(a.bpm)} BPM · key ${a.key.tonic} ${a.key.mode} · ` +
+      const k = MM.keyOf(a);
+      L.push(`> One prompt, whole clip. ${Math.round(a.bpm)} BPM · ` +
+        (k ? `key ${k.tonic} ${k.mode} · ` : '') +
         `${mmss(a.duration || 0)} · bar = ${bar.toFixed(2)}s · instrument: ${instEn}` +
         (a.mood ? ` · mood ${a.mood}` : ''));
     } else {
@@ -771,6 +787,12 @@
     const barre = guitar && (MM.guitarFingering(chord) || {}).barre;
     const shape = barre ? 'a barre chord shape' : open ? 'an open chord shape' : 'a movable chord shape';
     const style = pick(STYLES, c.style, STYLES[3]);
+    /* The visual description leads in every tier, because fret and string
+       numbers are symbols an image model has no picture of. A distance is not
+       a symbol — the neck in the frame has a length to measure against — so
+       this goes in beside it rather than instead of it, and it brings the
+       thumb, which nothing else in these prompts has ever mentioned. */
+    const measured = (guitar && global.Fretboard) ? global.Fretboard.placementMm(chord) : null;
     const L = [];
 
     if (tier === 'macro') {
@@ -783,6 +805,7 @@
       L.push('');
       L.push('THE HAND IS THE SUBJECT. Get this exactly right:');
       L.push(visual || exact || '');
+      if (measured) { L.push(''); L.push(`Measured on the neck: ${measured}.`); }
       if (guitar) {
         L.push('');
         L.push('I am also attaching a chord diagram for this chord. Read it as the exact pattern ' +
@@ -815,6 +838,7 @@
       L.push(`THE CHORD — ${chordSpoken(chord)} (${chord}), ${shape}. The fretting hand is in the ` +
         'foreground, closest to the camera, large in frame and tack-sharp:');
       L.push(visual || exact || '');
+      if (measured) L.push(`Measured on the neck: ${measured}.`);
       L.push('');
       L.push('The instrument is angled so the face of the fretboard is turned toward the camera and ' +
         'the fingertips are unobstructed.');
